@@ -1,15 +1,21 @@
 # app.py
 from flask import Flask, render_template, send_from_directory
 import os
-from database import init_db
+from models import db, Car
 from routes import car_routes, view_routes
 
 app = Flask(__name__)
 
 # Konfiguration
+# Stelle sicher, dass das data-Verzeichnis existiert
+data_dir = os.path.join(app.root_path, 'data')
+os.makedirs(data_dir, exist_ok=True)
+
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-size
 app.secret_key = os.getenv('SECRET_KEY', 'dev')  # Setze einen Secret Key für Sessions
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'images')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(data_dir, "car_data.db")}')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Stelle sicher, dass Upload-Ordner existiert
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -18,8 +24,11 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 app.register_blueprint(car_routes.bp)
 app.register_blueprint(view_routes.bp)
 
-# Initialize database
-init_db()
+# Initialize DB
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
 
 @app.template_filter('numberformat')
 def numberformat_filter(value):
@@ -39,10 +48,6 @@ def home():
     """Homepage Route"""
     return render_template('home.html')
 
-@app.route('/car-form')
-def car_form():
-    """Formular für neue Fahrzeuge"""
-    return render_template('car_form.html')
 
 @app.route('/intake-form')
 def intake_form():

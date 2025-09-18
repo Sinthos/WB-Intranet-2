@@ -58,8 +58,30 @@
     .btn-cancel:hover {
         background-color: #5a6268;
     }
+    .is-invalid {
+        border-color: #dc3545;
+    }
+    .invalid-feedback {
+        color: #dc3545;
+        display: block;
+        font-size: 0.875em;
+    }
 </style>
 {% endblock %}
+
+{% macro render_field(field, class_name='form-control', attrs={}) %}
+    <div class="mb-3">
+        {{ field.label(class="form-label") }}
+        {{ field(class=class_name + (' is-invalid' if field.errors else ''), **attrs) }}
+        {% if field.errors %}
+            <div class="invalid-feedback">
+                {% for error in field.errors %}
+                    <span>{{ error }}</span><br>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endmacro %}
 
 {% block content %}
 <div class="form-container">
@@ -70,122 +92,37 @@
         </a>
     </div>
 
-    <form action="{{ url_for('views.generate_pdf') }}" method="post">
+    <form action="{{ url_for('views.car_form') }}" method="post" novalidate>
+        {{ form.hidden_tag() }}
         <div class="row g-4">
             <!-- Erste Zeile -->
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="listing_number" class="form-label">Angebotsnummer</label>
-                    <input type="text" class="form-control" id="listing_number" name="listing_number" required>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="brand" class="form-label">Marke</label>
-                    <input type="text" class="form-control" id="brand" name="brand" required>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="model" class="form-label">Modell</label>
-                    <input type="text" class="form-control" id="model" name="model" required>
-                </div>
-            </div>
+            <div class="col-md-4">{{ render_field(form.listing_number) }}</div>
+            <div class="col-md-4">{{ render_field(form.brand) }}</div>
+            <div class="col-md-4">{{ render_field(form.model) }}</div>
 
             <!-- Zweite Zeile -->
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="engine_capacity" class="form-label">Hubraum (ccm)</label>
-                    <input type="number" class="form-control" id="engine_capacity" name="engine_capacity" required>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="power" class="form-label">Leistung</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" id="power" name="power" required>
-                        <select class="form-select" id="power_unit" name="power_unit" style="max-width: 100px;">
-                            <option value="ps">PS</option>
-                            <option value="kw">KW</option>
-                        </select>
-                    </div>
-                    <small class="form-text text-muted">
-                        Die Leistung wird in der Datenbank in PS gespeichert.
-                    </small>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="fuel_type" class="form-label">Kraftstoff</label>
-                    <select class="form-select" id="fuel_type" name="fuel_type" required>
-                        <option value="Benzin">Benzin</option>
-                        <option value="Diesel">Diesel</option>
-                        <option value="Elektro">Elektro</option>
-                        <option value="Hybrid">Hybrid</option>
-                    </select>
-                </div>
-            </div>
+            <div class="col-md-4">{{ render_field(form.engine_capacity) }}</div>
+            <div class="col-md-4">{{ render_field(form.power) }}</div>
+            <div class="col-md-4">{{ render_field(form.fuel_type, class_name='form-select') }}</div>
 
             <!-- Dritte Zeile -->
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="transmission" class="form-label">Getriebe</label>
-                    <select class="form-select" id="transmission" name="transmission" required>
-                        <option value="Automatik">Automatik</option>
-                        <option value="Manuell">Manuell</option>
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="mileage" class="form-label">Kilometerstand</label>
-                    <input type="number" class="form-control" id="mileage" name="mileage" required>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="mb-3">
-                    <label for="first_registration" class="form-label">Erstzulassung (MM/YYYY)</label>
-                    <input type="text" class="form-control" id="first_registration" name="first_registration"
-                           pattern="(0[1-9]|1[0-2])\/[0-9]{4}"
-                           placeholder="MM/YYYY" required>
-                </div>
-            </div>
+            <div class="col-md-4">{{ render_field(form.transmission, class_name='form-select') }}</div>
+            <div class="col-md-4">{{ render_field(form.mileage) }}</div>
+            <div class="col-md-4">{{ render_field(form.first_registration, attrs={'placeholder': 'MM/YYYY'}) }}</div>
 
             <!-- Vierte Zeile -->
-            <div class="col-12">
-                <div class="mb-3">
-                    <label for="features" class="form-label">Sonderausstattung (Eine pro Zeile)</label>
-                    <div class="form-text mb-2">Bitte maximal 15 Ausstattungsmerkmale eintragen</div>
-                    <textarea class="form-control features-textarea" id="features" name="features" required></textarea>
-                </div>
-            </div>
+            <div class="col-12">{{ render_field(form.features, class_name='form-control features-textarea') }}</div>
 
             <!-- Fünfte Zeile -->
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="eco_badge" class="form-label">Umweltplakette</label>
-                    <select class="form-select" id="eco_badge" name="eco_badge" required>
-                        <option value="1">1 - Schwarz</option>
-                        <option value="2">2 - Rot</option>
-                        <option value="3">3 - Gelb</option>
-                        <option value="4">4 - Grün</option>
-                        <option value="5">5 - Blau</option>
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="price" class="form-label">Preis (€)</label>
-                    <input type="number" class="form-control" id="price" name="price" required>
-                </div>
-            </div>
+            <div class="col-md-6">{{ render_field(form.eco_badge, class_name='form-select') }}</div>
+            <div class="col-md-6">{{ render_field(form.price) }}</div>
 
             <!-- Sechste Zeile -->
             <div class="col-12">
                 <div class="mb-4">
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="vat_deductible" name="vat_deductible">
-                        <label class="form-check-label" for="vat_deductible">MwSt. ausweisbar</label>
+                        {{ form.vat_deductible(class="form-check-input") }}
+                        {{ form.vat_deductible.label(class="form-check-label") }}
                     </div>
                 </div>
             </div>
@@ -193,48 +130,11 @@
             <!-- Action Buttons -->
             <div class="col-12">
                 <div class="action-buttons">
-                    <button type="submit" class="btn btn-primary btn-submit">PDF erstellen</button>
+                    {{ form.submit(class="btn btn-primary btn-submit") }}
                     <a href="{{ url_for('home') }}" class="btn btn-cancel">Abbrechen</a>
                 </div>
             </div>
         </div>
     </form>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const powerInput = document.getElementById('power');
-    const powerUnit = document.getElementById('power_unit');
-
-    function convertPower() {
-        if (!powerInput.value) return;
-
-        const value = parseFloat(powerInput.value);
-        if (powerUnit.value === 'kw') {
-            // Konvertiere KW zu PS vor dem Submit
-            const psValue = Math.round(value * 1.359622);
-            powerInput.value = psValue;
-        }
-    }
-
-    // Füge einen Event Listener zum Formular hinzu
-    document.querySelector('form').addEventListener('submit', function(e) {
-        convertPower();
-    });
-
-    // Live-Konvertierung wenn Einheit geändert wird
-    powerUnit.addEventListener('change', function() {
-        if (!powerInput.value) return;
-
-        const value = parseFloat(powerInput.value);
-        if (this.value === 'kw') {
-            // Konvertiere PS zu KW
-            powerInput.value = Math.round(value / 1.359622);
-        } else {
-            // Konvertiere KW zu PS
-            powerInput.value = Math.round(value * 1.359622);
-        }
-    });
-});
-</script>
 {% endblock %}

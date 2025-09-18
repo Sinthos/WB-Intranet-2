@@ -163,35 +163,39 @@
             <tbody>
                 {% for car in cars %}
                 <tr>
-                    <td>{{ car[0] }}</td>
-                    <td>{{ car[1] }}</td>
-                    <td>{{ car[2] }}</td>
-                    <td>{{ car[3] }}</td>
-                    <td>{{ car[4] }} ccm</td>
-                    <td>{{ car[5] }} PS</td>
-                    <td>{{ car[6] }}</td>
-                    <td>{{ car[7] }}</td>
-                    <td>{{ car[8] | numberformat }} km</td>
-                    <td>{{ car[9] }}</td>
-                    <td class="features-cell">{{ car[10] }}</td>
-                    <td>{{ car[11] }}</td>
-                    <td>{{ car[12] | numberformat }} €</td>
-                    <td>{% if car[13] %}Ja{% else %}Nein{% endif %}</td>
-                    <td>{{ car[14] }}</td>
+                    <td>{{ car.id }}</td>
+                    <td>{{ car.listing_number }}</td>
+                    <td>{{ car.brand }}</td>
+                    <td>{{ car.model }}</td>
+                    <td>{{ car.engine_capacity }} ccm</td>
+                    <td>{{ car.power }} PS</td>
+                    <td>{{ car.fuel_type }}</td>
+                    <td>{{ car.transmission }}</td>
+                    <td>{{ car.mileage | numberformat }} km</td>
+                    <td>{{ car.first_registration }}</td>
+                    <td class="features-cell" title="{{ car.features }}">{{ car.features }}</td>
+                    <td>{{ car.eco_badge }}</td>
+                    <td>{{ car.price | numberformat }} €</td>
+                    <td>{% if car.vat_deductible %}Ja{% else %}Nein{% endif %}</td>
+                    <td>{{ car.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
                     <td class="action-column">
                         <button class="btn btn-warning btn-sm action-button edit-car"
-                                data-car-id="{{ car[0] }}">
+                                data-car-id="{{ car.id }}">
                             Bearbeiten
                         </button>
                         <button class="btn btn-danger btn-sm action-button delete-car"
-                                data-car-id="{{ car[0] }}">
+                                data-car-id="{{ car.id }}">
                             Löschen
                         </button>
-                        <a href="{{ url_for('views.generate_car_pdf', car_id=car[0]) }}"
+                        <a href="{{ url_for('views.generate_car_pdf', car_id=car.id) }}"
                            class="btn btn-primary btn-sm action-button">
                             PDF
                         </a>
                     </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="17" class="text-center">Keine Fahrzeuge in der Datenbank gefunden.</td>
                 </tr>
                 {% endfor %}
             </tbody>

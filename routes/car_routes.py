@@ -9,9 +9,8 @@ def get_car(car_id):
     car = get_car_by_id(car_id)
 
     if car:
-        # Convert Row object to dictionary
-        car_dict = dict(car)
-        return jsonify(car_dict)
+        # Convert Car object to dictionary
+        return jsonify(car.to_dict())
     else:
         return jsonify({'error': 'Fahrzeug nicht gefunden'}), 404
 
