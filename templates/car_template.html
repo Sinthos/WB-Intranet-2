@@ -398,9 +398,16 @@
             Biebermühle 5<br>
           </div>
           <div class="footer-col">
+            {% if seller == 'Im Auftrag' %}
+            <div style="font-size: 0.8em; text-align: center; padding-top: 10px;">
+              Dieses Fahrzeug wird im Kundenauftrag vermittelt.<br>
+              Auto Berndl tritt ausschließlich als Vermittler auf.
+            </div>
+            {% else %}
             <div class="footer-logo">
               <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Auto Berndl Logo">
             </div>
+            {% endif %}
           </div>
           <div class="footer-col">
             www.autoberndl.de<br>

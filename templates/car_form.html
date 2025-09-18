@@ -127,6 +127,21 @@
                 </div>
             </div>
 
+            <!-- Siebte Zeile -->
+            <div class="col-12">
+                <div class="mb-3">
+                    {{ form.seller.label(class="form-label") }}
+                    <div>
+                        {% for subfield in form.seller %}
+                            <div class="form-check form-check-inline">
+                                {{ subfield(class="form-check-input") }}
+                                {{ subfield.label(class="form-check-label") }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
             <!-- Action Buttons -->
             <div class="col-12">
                 <div class="action-buttons">

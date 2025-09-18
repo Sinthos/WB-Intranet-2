@@ -20,6 +20,7 @@ class Car(db.Model):
     eco_badge = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Integer, nullable=False, index=True)
     vat_deductible = db.Column(db.Boolean, nullable=False)
+    seller = db.Column(db.String, nullable=False, server_default='Auto Berndl', index=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), index=True)
 
     def to_dict(self):

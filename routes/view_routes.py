@@ -68,7 +68,8 @@ def car_form():
             'features': [feature.strip() for feature in form.features.data.splitlines() if feature.strip()],
             'eco_badge': form.eco_badge.data,
             'price': form.price.data,
-            'vat_deductible': form.vat_deductible.data
+            'vat_deductible': form.vat_deductible.data,
+            'seller': form.seller.data
         }
 
         try:
@@ -97,7 +98,8 @@ def generate_car_pdf(car_id):
     html_content = render_template('car_template.html',
                                    car=car_dict,
                                    eco_badge_color=eco_badge_color,
-                                   eco_badge_stroke=eco_badge_stroke)
+                                   eco_badge_stroke=eco_badge_stroke,
+                                   seller=car_dict.get('seller', 'Auto Berndl'))
     pdf_file = generate_pdf_from_template(html_content)
     filename = f"{car_dict['brand']}_{car_dict['model']}_{car_dict['listing_number']}.pdf".replace(" ", "_")
 

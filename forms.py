@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, SelectField, TextAreaField, BooleanField, SubmitField
+from wtforms import StringField, IntegerField, SelectField, TextAreaField, BooleanField, SubmitField, RadioField
 from wtforms.validators import DataRequired, NumberRange, Length
 
 class CarForm(FlaskForm):
@@ -29,4 +29,5 @@ class CarForm(FlaskForm):
     ], coerce=int, validators=[DataRequired()])
     price = IntegerField('Preis (€)', validators=[DataRequired(), NumberRange(min=0)])
     vat_deductible = BooleanField('MwSt. ausweisbar')
+    seller = RadioField('Verkäufer', choices=[('Auto Berndl', 'Auto Berndl'), ('Im Auftrag', 'Im Auftrag')], default='Auto Berndl', validators=[DataRequired()])
     submit = SubmitField('PDF generieren und Speichern')
