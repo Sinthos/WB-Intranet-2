@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Auto Berndl - Fahrzeugübersicht{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .sort-icon {
+        cursor: pointer;
+        margin-left: 5px;
+    }
+
+    .sort-icon.active {
+        color: #0d6efd;
+    }
+
+    .action-column {
+        white-space: nowrap;
+        width: 200px;
+    }
+
+    .table-responsive {
+        margin-top: 20px;
+    }
+
+    .action-button {
+        margin: 2px;
+    }
+
+    .features-cell {
+        max-width: 300px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .features-cell:hover {
+        white-space: normal;
+        overflow: visible;
+        position: relative;
+        background-color: #f8f9fa;
+        z-index: 1;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+
+    .invalid-feedback {
+        display: block;
+    }
+
+    .table th {
+        position: relative;
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1050;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Loading Overlay -->
+<div class="loading-overlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Laden...</span>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <h1 class="mb-4">Übersicht der Fahrzeuge</h1>
+
+    <!-- Suchbereich -->
+    <div class="search-section">
+        <form action="{{ url_for('views.view_cars') }}" method="GET" class="row g-3 align-items-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="search" value="{{ search_term }}"
+                           placeholder="Suche nach Angebotsnummer, Marke, Modell...">
+                    <button class="btn btn-primary" type="submit">Suchen</button>
+                    {% if search_term %}
+                        <a href="{{ url_for('views.view_cars') }}" class="btn btn-secondary">Zurücksetzen</a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabelle -->
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>
+                        ID
+                        <span class="sort-icon" data-sort="id">
+                            {% if sort_by == 'id' %}
+                                {% if sort_order == 'asc' %}↑{% else %}↓{% endif %}
+                            {% else %}↕{% endif %}
+                        </span>
+                    </th>
+                    <th>
+                        Angebotsnummer
+                        <span class="sort-icon" data-sort="listing_number">
+                            {% if sort_by == 'listing_number' %}
+                                {% if sort_order == 'asc' %}↑{% else %}↓{% endif %}
+                            {% else %}↕{% endif %}
+                        </span>
+                    </th>
+                    <th>
+                        Marke
+                        <span class="sort-icon" data-sort="brand">
+                            {% if sort_by == 'brand' %}
+                                {% if sort_order == 'asc' %}↑{% else %}↓{% endif %}
+                            {% else %}↕{% endif %}
+                        </span>
+                    </th>
+                    <th>Modell</th>
+                    <th>Hubraum</th>
+                    <th>Leistung</th>
+                    <th>Kraftstoff</th>
+                    <th>Getriebe</th>
+                    <th>Kilometer</th>
+                    <th>Erstzulassung</th>
+                    <th>Sonderausstattung</th>
+                    <th>Umweltplakette</th>
+                    <th>
+                        Preis
+                        <span class="sort-icon" data-sort="price">
+                            {% if sort_by == 'price' %}
+                                {% if sort_order == 'asc' %}↑{% else %}↓{% endif %}
+                            {% else %}↕{% endif %}
+                        </span>
+                    </th>
+                    <th>MwSt. ausweisbar</th>
+                    <th>
+                        Erstellt am
+                        <span class="sort-icon" data-sort="created_at">
+                            {% if sort_by == 'created_at' %}
+                                {% if sort_order == 'asc' %}↑{% else %}↓{% endif %}
+                            {% else %}↕{% endif %}
+                        </span>
+                    </th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for car in cars %}
+                <tr>
+                    <td>{{ car[0] }}</td>
+                    <td>{{ car[1] }}</td>
+                    <td>{{ car[2] }}</td>
+                    <td>{{ car[3] }}</td>
+                    <td>{{ car[4] }} ccm</td>
+                    <td>{{ car[5] }} PS</td>
+                    <td>{{ car[6] }}</td>
+                    <td>{{ car[7] }}</td>
+                    <td>{{ car[8] | numberformat }} km</td>
+                    <td>{{ car[9] }}</td>
+                    <td class="features-cell">{{ car[10] }}</td>
+                    <td>{{ car[11] }}</td>
+                    <td>{{ car[12] | numberformat }} €</td>
+                    <td>{% if car[13] %}Ja{% else %}Nein{% endif %}</td>
+                    <td>{{ car[14] }}</td>
+                    <td class="action-column">
+                        <button class="btn btn-warning btn-sm action-button edit-car"
+                                data-car-id="{{ car[0] }}">
+                            Bearbeiten
+                        </button>
+                        <button class="btn btn-danger btn-sm action-button delete-car"
+                                data-car-id="{{ car[0] }}">
+                            Löschen
+                        </button>
+                        <a href="{{ url_for('views.generate_car_pdf', car_id=car[0]) }}"
+                           class="btn btn-primary btn-sm action-button">
+                            PDF
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal für Bearbeiten -->
+<div class="modal fade" id="editCarModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Fahrzeug bearbeiten</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCarForm">
+                    <!-- Formularfelder werden dynamisch per JavaScript eingefügt -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-primary" id="saveCarChanges">Speichern</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/car_management.js') }}"></script>
+{% endblock %}

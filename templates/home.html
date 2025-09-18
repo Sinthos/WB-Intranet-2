@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Auto Berndl - Startseite{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Willkommen im internen Bereich</h1>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Fahrzeugauszeichnung</h5>
+                        <p class="card-text">Erstellen Sie professionelle Fahrzeugauszeichnungen für Ihren Fahrzeugbestand.</p>
+                        <a href="{{ url_for('car_form') }}" class="btn btn-primary">Zur Fahrzeugauszeichnung</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Aufnahmeblatt</h5>
+                        <p class="card-text">Erfassen Sie neue Fahrzeuge in Ihrem Bestand mit dem digitalen Aufnahmeblatt.</p>
+                        <a href="{{ url_for('intake_form') }}" class="btn btn-primary">Zum Aufnahmeblatt</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Fahrzeugübersicht</h5>
+                        <p class="card-text">Sehen Sie sich die Liste der in der Datenbank gespeicherten Fahrzeuge an.</p>
+                        <a href="{{ url_for('views.view_cars') }}" class="btn btn-primary">Zur Fahrzeugübersicht</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

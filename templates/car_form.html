@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Auto Berndl - Fahrzeugauszeichnung{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        padding: 2rem;
+    }
+    .page-title {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    .form-control, .form-select {
+        border: 1px solid #ced4da;
+        padding: 0.75rem;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    .btn-submit {
+        background-color: #0d6efd;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-submit:hover {
+        background-color: #0b5ed7;
+        transform: translateY(-1px);
+    }
+    .features-textarea {
+        min-height: 200px;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    .btn-cancel {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-cancel:hover {
+        background-color: #5a6268;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1 class="page-title">Fahrzeugauszeichnung erstellen</h1>
+        <a href="{{ url_for('home') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-house"></i> Zur Startseite
+        </a>
+    </div>
+
+    <form action="{{ url_for('views.generate_pdf') }}" method="post">
+        <div class="row g-4">
+            <!-- Erste Zeile -->
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="listing_number" class="form-label">Angebotsnummer</label>
+                    <input type="text" class="form-control" id="listing_number" name="listing_number" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="brand" class="form-label">Marke</label>
+                    <input type="text" class="form-control" id="brand" name="brand" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="model" class="form-label">Modell</label>
+                    <input type="text" class="form-control" id="model" name="model" required>
+                </div>
+            </div>
+
+            <!-- Zweite Zeile -->
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="engine_capacity" class="form-label">Hubraum (ccm)</label>
+                    <input type="number" class="form-control" id="engine_capacity" name="engine_capacity" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="power" class="form-label">Leistung</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="power" name="power" required>
+                        <select class="form-select" id="power_unit" name="power_unit" style="max-width: 100px;">
+                            <option value="ps">PS</option>
+                            <option value="kw">KW</option>
+                        </select>
+                    </div>
+                    <small class="form-text text-muted">
+                        Die Leistung wird in der Datenbank in PS gespeichert.
+                    </small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="fuel_type" class="form-label">Kraftstoff</label>
+                    <select class="form-select" id="fuel_type" name="fuel_type" required>
+                        <option value="Benzin">Benzin</option>
+                        <option value="Diesel">Diesel</option>
+                        <option value="Elektro">Elektro</option>
+                        <option value="Hybrid">Hybrid</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Dritte Zeile -->
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="transmission" class="form-label">Getriebe</label>
+                    <select class="form-select" id="transmission" name="transmission" required>
+                        <option value="Automatik">Automatik</option>
+                        <option value="Manuell">Manuell</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="mileage" class="form-label">Kilometerstand</label>
+                    <input type="number" class="form-control" id="mileage" name="mileage" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="first_registration" class="form-label">Erstzulassung (MM/YYYY)</label>
+                    <input type="text" class="form-control" id="first_registration" name="first_registration"
+                           pattern="(0[1-9]|1[0-2])\/[0-9]{4}"
+                           placeholder="MM/YYYY" required>
+                </div>
+            </div>
+
+            <!-- Vierte Zeile -->
+            <div class="col-12">
+                <div class="mb-3">
+                    <label for="features" class="form-label">Sonderausstattung (Eine pro Zeile)</label>
+                    <div class="form-text mb-2">Bitte maximal 15 Ausstattungsmerkmale eintragen</div>
+                    <textarea class="form-control features-textarea" id="features" name="features" required></textarea>
+                </div>
+            </div>
+
+            <!-- Fünfte Zeile -->
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="eco_badge" class="form-label">Umweltplakette</label>
+                    <select class="form-select" id="eco_badge" name="eco_badge" required>
+                        <option value="1">1 - Schwarz</option>
+                        <option value="2">2 - Rot</option>
+                        <option value="3">3 - Gelb</option>
+                        <option value="4">4 - Grün</option>
+                        <option value="5">5 - Blau</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="price" class="form-label">Preis (€)</label>
+                    <input type="number" class="form-control" id="price" name="price" required>
+                </div>
+            </div>
+
+            <!-- Sechste Zeile -->
+            <div class="col-12">
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="vat_deductible" name="vat_deductible">
+                        <label class="form-check-label" for="vat_deductible">MwSt. ausweisbar</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="col-12">
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-primary btn-submit">PDF erstellen</button>
+                    <a href="{{ url_for('home') }}" class="btn btn-cancel">Abbrechen</a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const powerInput = document.getElementById('power');
+    const powerUnit = document.getElementById('power_unit');
+
+    function convertPower() {
+        if (!powerInput.value) return;
+
+        const value = parseFloat(powerInput.value);
+        if (powerUnit.value === 'kw') {
+            // Konvertiere KW zu PS vor dem Submit
+            const psValue = Math.round(value * 1.359622);
+            powerInput.value = psValue;
+        }
+    }
+
+    // Füge einen Event Listener zum Formular hinzu
+    document.querySelector('form').addEventListener('submit', function(e) {
+        convertPower();
+    });
+
+    // Live-Konvertierung wenn Einheit geändert wird
+    powerUnit.addEventListener('change', function() {
+        if (!powerInput.value) return;
+
+        const value = parseFloat(powerInput.value);
+        if (this.value === 'kw') {
+            // Konvertiere PS zu KW
+            powerInput.value = Math.round(value / 1.359622);
+        } else {
+            // Konvertiere KW zu PS
+            powerInput.value = Math.round(value * 1.359622);
+        }
+    });
+});
+</script>
+{% endblock %}
