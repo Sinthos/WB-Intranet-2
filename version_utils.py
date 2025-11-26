@@ -64,6 +64,14 @@ def _load_build_info() -> tuple:
 
 def get_git_commit_hash(short: bool = True) -> str:
     """Gibt den aktuellen Git-Commit-Hash zurück."""
+    # Zuerst versuchen aus Build-Info-Datei zu laden (schneller und zuverlässiger)
+    commit_short, commit_full, _ = _load_build_info()
+    if short and commit_short:
+        return commit_short
+    elif not short and commit_full:
+        return commit_full
+    
+    # Fallback: Git-Befehl versuchen
     try:
         cmd = ['git', 'rev-parse', '--short', 'HEAD'] if short else ['git', 'rev-parse', 'HEAD']
         result = subprocess.run(
@@ -75,21 +83,23 @@ def get_git_commit_hash(short: bool = True) -> str:
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
+    except FileNotFoundError:
+        # Git ist nicht installiert
+        pass
     except Exception:
         pass
-    
-    # Fallback: Lade aus Build-Info-Datei
-    commit_short, commit_full, _ = _load_build_info()
-    if short and commit_short:
-        return commit_short
-    elif not short and commit_full:
-        return commit_full
     
     return "lokal"
 
 
 def get_git_commit_date() -> str:
     """Gibt das Datum des letzten Commits zurück."""
+    # Zuerst versuchen aus Build-Info-Datei zu laden
+    _, _, commit_date = _load_build_info()
+    if commit_date:
+        return commit_date
+    
+    # Fallback: Git-Befehl versuchen
     try:
         result = subprocess.run(
             ['git', 'log', '-1', '--format=%ci'],
@@ -103,13 +113,11 @@ def get_git_commit_date() -> str:
             # Parse und formatiere das Datum
             dt = datetime.strptime(date_str[:19], '%Y-%m-%d %H:%M:%S')
             return dt.strftime('%d.%m.%Y %H:%M')
+    except FileNotFoundError:
+        # Git ist nicht installiert
+        pass
     except Exception:
         pass
-    
-    # Fallback: Lade aus Build-Info-Datei
-    _, _, commit_date = _load_build_info()
-    if commit_date:
-        return commit_date
     
     # Letzter Fallback: Datei-Änderungsdatum der VERSION-Datei
     try:
@@ -165,9 +173,9 @@ def _check_for_updates_via_git() -> dict:
         "source": "git"
     }
     
+    cwd = os.path.dirname(os.path.abspath(__file__))
+    
     try:
-        cwd = os.path.dirname(os.path.abspath(__file__))
-        
         # Fetch updates from remote (ohne zu mergen)
         fetch_result = subprocess.run(
             ['git', 'fetch', 'origin'],
@@ -231,6 +239,8 @@ def _check_for_updates_via_git() -> dict:
         else:
             result["error"] = "Konnte Remote-Branch nicht finden"
             
+    except FileNotFoundError:
+        result["error"] = "Git ist nicht installiert. Bitte Update manuell durchführen."
     except subprocess.TimeoutExpired:
         result["error"] = "Git-Befehl Zeitüberschreitung"
     except Exception as e:
@@ -344,7 +354,8 @@ def _get_changelog_via_git(limit: int = 10) -> list:
             ['git', 'log', f'-{limit}', '--format=%H|%s|%ci|%an'],
             capture_output=True,
             text=True,
-            cwd=cwd
+            cwd=cwd,
+            timeout=10
         )
         
         if result.returncode == 0:
@@ -365,6 +376,9 @@ def _get_changelog_via_git(limit: int = 10) -> list:
                             "date": formatted_date,
                             "author": author
                         })
+    except FileNotFoundError:
+        # Git ist nicht installiert
+        pass
     except Exception:
         pass
     
