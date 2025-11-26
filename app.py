@@ -94,14 +94,32 @@ def api_changelog():
 @app.route('/api/update', methods=['POST'])
 def api_update():
     """
-    Führt ein Update durch (nur von localhost erlaubt).
+    Führt ein Update durch (von localhost und lokalem Netzwerk erlaubt).
     Startet das update.sh Skript.
     """
-    # Sicherheitscheck: Nur localhost erlauben
-    if request.remote_addr not in ['127.0.0.1', '::1', 'localhost']:
+    # Sicherheitscheck: Localhost und lokales Netzwerk erlauben
+    remote_addr = request.remote_addr
+    allowed = False
+    
+    # Localhost erlauben
+    if remote_addr in ['127.0.0.1', '::1', 'localhost']:
+        allowed = True
+    # Private Netzwerke erlauben (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+    elif remote_addr.startswith('192.168.') or remote_addr.startswith('10.'):
+        allowed = True
+    elif remote_addr.startswith('172.'):
+        # 172.16.0.0 - 172.31.255.255
+        try:
+            second_octet = int(remote_addr.split('.')[1])
+            if 16 <= second_octet <= 31:
+                allowed = True
+        except (ValueError, IndexError):
+            pass
+    
+    if not allowed:
         return jsonify({
             'success': False,
-            'error': 'Update nur von localhost erlaubt'
+            'error': 'Update nur von localhost oder lokalem Netzwerk erlaubt'
         }), 403
     
     try:

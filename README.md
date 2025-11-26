@@ -3,7 +3,6 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.9+-yellow.svg)
-![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
 
 Internes Verwaltungssystem für Fahrzeugauszeichnungen und Aufnahmeblätter.
 
@@ -36,8 +35,9 @@ wget -qO- https://raw.githubusercontent.com/Sinthos/WB-Intranet-2/main/install.s
 ```
 
 Das Skript:
-- ✅ Installiert Docker und Docker Compose
+- ✅ Installiert Python 3.9+ und alle Abhängigkeiten
 - ✅ Klont das Repository
+- ✅ Erstellt eine virtuelle Python-Umgebung
 - ✅ Startet die Anwendung
 - ✅ Erstellt einen Systemd-Service für Auto-Start
 
@@ -45,24 +45,11 @@ Das Skript:
 
 #### Voraussetzungen
 
-- Docker & Docker Compose
+- Python 3.9 oder höher
 - Git
+- pip
 
 #### Schritte
-
-```bash
-# Repository klonen
-git clone https://github.com/Sinthos/WB-Intranet-2.git
-cd WB-Intranet-2
-
-# Container starten
-docker compose up -d
-
-# Logs anzeigen
-docker compose logs -f
-```
-
-### Ohne Docker (Entwicklung)
 
 ```bash
 # Repository klonen
@@ -72,13 +59,25 @@ cd WB-Intranet-2
 # Virtuelle Umgebung erstellen
 python3 -m venv venv
 source venv/bin/activate  # Linux/Mac
-# oder: venv\Scripts\activate  # Windows
 
 # Abhängigkeiten installieren
 pip install -r requirements.txt
 
 # Anwendung starten
 python app.py
+```
+
+#### System-Abhängigkeiten (Debian/Ubuntu)
+
+Für die PDF-Generierung werden folgende Pakete benötigt:
+
+```bash
+sudo apt-get install -y \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info
 ```
 
 ---
@@ -110,8 +109,31 @@ bash update.sh -b
 # Update ohne Bestätigung
 bash update.sh -f
 
+# Update ohne Backup
+bash update.sh --no-backup
+
 # Hilfe anzeigen
 bash update.sh -h
+```
+
+### Manuelles Update
+
+Falls das Update-Skript nicht funktioniert:
+
+```bash
+cd /opt/wb-intranet
+
+# Änderungen von GitHub holen
+git pull origin main
+
+# Virtuelle Umgebung aktivieren
+source venv/bin/activate
+
+# Abhängigkeiten aktualisieren
+pip install -r requirements.txt
+
+# Service neu starten
+sudo systemctl restart wb-intranet
 ```
 
 ---
@@ -146,8 +168,6 @@ WB-Intranet-2/
 ├── forms.py               # WTForms-Formulare
 ├── version_utils.py       # Versionsverwaltung
 ├── requirements.txt       # Python-Abhängigkeiten
-├── Dockerfile             # Docker-Image-Definition
-├── docker-compose.yml     # Docker Compose-Konfiguration
 ├── install.sh             # Installationsskript
 ├── update.sh              # Update-Skript
 ├── VERSION                # Versionsnummer
@@ -164,8 +184,10 @@ WB-Intranet-2/
 ├── static/
 │   ├── images/            # Bilder und Logos
 │   └── js/                # JavaScript-Dateien
-└── data/
-    └── car_data.db        # SQLite-Datenbank
+├── data/
+│   └── car_data.db        # SQLite-Datenbank
+├── backups/               # Datenbank-Backups
+└── venv/                  # Virtuelle Python-Umgebung
 ```
 
 ---
@@ -181,16 +203,32 @@ WB-Intranet-2/
 | `DATABASE_URL` | Datenbank-URL | `sqlite:///data/car_data.db` |
 | `FLASK_ENV` | Umgebung | `production` |
 
-### Docker Compose anpassen
+### Systemd Service anpassen
 
-```yaml
-# docker-compose.yml
-services:
-  auto-berndl:
-    ports:
-      - "8080:5000"  # Anderen Port verwenden
-    environment:
-      - SECRET_KEY=mein-geheimer-schluessel
+Der Service befindet sich unter `/etc/systemd/system/wb-intranet.service`:
+
+```ini
+[Unit]
+Description=WB-Intranet 2 - Auto Berndl Intranet
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/wb-intranet
+Environment="PATH=/opt/wb-intranet/venv/bin"
+ExecStart=/opt/wb-intranet/venv/bin/python app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Nach Änderungen:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart wb-intranet
 ```
 
 ---
@@ -210,29 +248,33 @@ cp data/car_data.db backups/car_data_$(date +%Y%m%d).db
 ### Backup wiederherstellen
 
 ```bash
-# Container stoppen
-docker compose down
+# Service stoppen
+sudo systemctl stop wb-intranet
 
 # Backup wiederherstellen
 cp backups/car_data_DATUM.db data/car_data.db
 
-# Container starten
-docker compose up -d
+# Service starten
+sudo systemctl start wb-intranet
 ```
 
 ---
 
 ## 🐛 Fehlerbehebung
 
-### Container startet nicht
+### Service startet nicht
 
 ```bash
-# Logs prüfen
-docker compose logs
+# Status prüfen
+sudo systemctl status wb-intranet
 
-# Container neu bauen
-docker compose build --no-cache
-docker compose up -d
+# Logs prüfen
+sudo journalctl -u wb-intranet -f
+
+# Service manuell starten zum Debuggen
+cd /opt/wb-intranet
+source venv/bin/activate
+python app.py
 ```
 
 ### Datenbank-Fehler
@@ -246,9 +288,22 @@ chmod 644 data/car_data.db
 ### Port bereits belegt
 
 ```bash
-# Anderen Port in docker-compose.yml verwenden
-ports:
-  - "8080:5000"
+# Prüfen welcher Prozess den Port verwendet
+sudo lsof -i :5000
+
+# Anderen Port verwenden (in app.py oder via Umgebungsvariable)
+PORT=8080 python app.py
+```
+
+### PDF-Generierung funktioniert nicht
+
+```bash
+# Fehlende Abhängigkeiten installieren
+sudo apt-get install -y \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    shared-mime-info
 ```
 
 ---
@@ -260,7 +315,7 @@ ports:
 | GET | `/api/version` | Aktuelle Version |
 | GET | `/api/check-update` | Auf Updates prüfen |
 | GET | `/api/changelog` | Changelog abrufen |
-| POST | `/api/update` | Update starten (nur localhost) |
+| POST | `/api/update` | Update starten (nur lokales Netzwerk) |
 | GET | `/api/cars/stats` | Fahrzeugstatistiken |
 | GET | `/api/cars/recent` | Letzte Fahrzeuge |
 | GET | `/api/cars/export` | Alle Fahrzeuge exportieren |

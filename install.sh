@@ -24,6 +24,7 @@ REPO_URL="https://github.com/Sinthos/WB-Intranet-2.git"
 INSTALL_DIR="/opt/wb-intranet"
 SERVICE_NAME="wb-intranet"
 APP_PORT=5000
+PYTHON_MIN_VERSION="3.9"
 
 # Logging-Funktionen
 log_info() {
@@ -96,7 +97,7 @@ update_packages() {
 
 # Installiere Abhängigkeiten
 install_dependencies() {
-    log_info "Installiere Abhängigkeiten..."
+    log_info "Installiere System-Abhängigkeiten..."
     
     # Basis-Pakete
     apt-get install -y -qq \
@@ -104,71 +105,39 @@ install_dependencies() {
         wget \
         git \
         ca-certificates \
-        gnupg \
-        lsb-release \
-        apt-transport-https \
-        software-properties-common
+        build-essential \
+        python3 \
+        python3-pip \
+        python3-venv \
+        python3-dev \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libgdk-pixbuf2.0-0 \
+        libffi-dev \
+        shared-mime-info
     
-    log_success "Basis-Abhängigkeiten installiert"
+    log_success "System-Abhängigkeiten installiert"
 }
 
-# Installiere Docker
-install_docker() {
-    if command -v docker &> /dev/null; then
-        log_success "Docker ist bereits installiert"
-        docker --version
-        return
-    fi
-
-    log_info "Installiere Docker..."
+# Prüfe Python-Version
+check_python() {
+    log_info "Prüfe Python-Version..."
     
-    # Docker GPG Key hinzufügen
-    install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/$OS/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
-
-    # Docker Repository hinzufügen
-    echo \
-        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$OS \
-        $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-    # Docker installieren
-    apt-get update -qq
-    apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-    # Docker starten und aktivieren
-    systemctl start docker
-    systemctl enable docker
-
-    log_success "Docker installiert und gestartet"
-    docker --version
-}
-
-# Installiere Docker Compose (falls nicht als Plugin vorhanden)
-install_docker_compose() {
-    if docker compose version &> /dev/null; then
-        log_success "Docker Compose (Plugin) ist bereits installiert"
-        docker compose version
-        return
+    if ! command -v python3 &> /dev/null; then
+        log_error "Python3 nicht gefunden!"
+        exit 1
     fi
-
-    if command -v docker-compose &> /dev/null; then
-        log_success "Docker Compose (Standalone) ist bereits installiert"
-        docker-compose --version
-        return
+    
+    PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    log_info "Python-Version: $PYTHON_VERSION"
+    
+    # Vergleiche Versionen
+    if python3 -c "import sys; exit(0 if sys.version_info >= (3, 9) else 1)"; then
+        log_success "Python-Version ist kompatibel"
+    else
+        log_error "Python $PYTHON_MIN_VERSION oder höher erforderlich!"
+        exit 1
     fi
-
-    log_info "Installiere Docker Compose..."
-    
-    # Neueste Version ermitteln
-    COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-    
-    # Docker Compose herunterladen
-    curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    chmod +x /usr/local/bin/docker-compose
-
-    log_success "Docker Compose installiert"
-    docker-compose --version
 }
 
 # Klone Repository
@@ -200,66 +169,67 @@ create_directories() {
     
     mkdir -p "$INSTALL_DIR/data"
     mkdir -p "$INSTALL_DIR/static/images"
+    mkdir -p "$INSTALL_DIR/backups"
     
     # Berechtigungen setzen
     chmod -R 755 "$INSTALL_DIR/data"
     chmod -R 755 "$INSTALL_DIR/static"
+    chmod -R 755 "$INSTALL_DIR/backups"
     
     log_success "Verzeichnisse erstellt"
 }
 
-# Baue und starte Docker Container
-start_application() {
-    log_info "Baue und starte Docker Container..."
+# Erstelle virtuelle Umgebung und installiere Python-Abhängigkeiten
+setup_python_env() {
+    log_info "Erstelle virtuelle Python-Umgebung..."
     
     cd "$INSTALL_DIR"
     
-    # Docker Compose verwenden (Plugin oder Standalone)
-    if docker compose version &> /dev/null; then
-        docker compose build
-        docker compose up -d
-    else
-        docker-compose build
-        docker-compose up -d
-    fi
+    # Erstelle venv
+    python3 -m venv venv
     
-    log_success "Anwendung gestartet"
+    # Aktiviere venv und installiere Abhängigkeiten
+    source venv/bin/activate
+    
+    log_info "Aktualisiere pip..."
+    pip install --upgrade pip -q
+    
+    log_info "Installiere Python-Abhängigkeiten..."
+    pip install -r requirements.txt -q
+    
+    deactivate
+    
+    log_success "Python-Umgebung eingerichtet"
 }
 
 # Erstelle Systemd Service
 create_systemd_service() {
     log_info "Erstelle Systemd Service..."
     
-    # Ermittle Docker Compose Befehl
-    if docker compose version &> /dev/null; then
-        COMPOSE_CMD="docker compose"
-    else
-        COMPOSE_CMD="docker-compose"
-    fi
-    
     cat > /etc/systemd/system/${SERVICE_NAME}.service << EOF
 [Unit]
 Description=WB-Intranet 2 - Auto Berndl Intranet
-Requires=docker.service
-After=docker.service
+After=network.target
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
+Type=simple
+User=root
 WorkingDirectory=${INSTALL_DIR}
-ExecStart=${COMPOSE_CMD} up -d
-ExecStop=${COMPOSE_CMD} down
-TimeoutStartSec=0
+Environment="PATH=${INSTALL_DIR}/venv/bin"
+ExecStart=${INSTALL_DIR}/venv/bin/python app.py
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-    # Service aktivieren
+    # Service aktivieren und starten
     systemctl daemon-reload
     systemctl enable ${SERVICE_NAME}.service
+    systemctl start ${SERVICE_NAME}.service
     
-    log_success "Systemd Service erstellt und aktiviert"
+    log_success "Systemd Service erstellt und gestartet"
 }
 
 # Konfiguriere Firewall (falls ufw installiert)
@@ -271,6 +241,28 @@ configure_firewall() {
     else
         log_info "UFW nicht installiert - überspringe Firewall-Konfiguration"
     fi
+}
+
+# Warte auf Anwendung
+wait_for_app() {
+    log_info "Warte auf Anwendung..."
+    
+    local max_attempts=30
+    local attempt=1
+    
+    while [[ $attempt -le $max_attempts ]]; do
+        if curl -s -o /dev/null -w "%{http_code}" http://localhost:${APP_PORT} 2>/dev/null | grep -q "200\|302"; then
+            log_success "Anwendung ist bereit!"
+            return 0
+        fi
+        
+        echo -n "."
+        sleep 1
+        ((attempt++))
+    done
+    
+    echo ""
+    log_warning "Anwendung antwortet noch nicht - bitte manuell prüfen"
 }
 
 # Zeige Abschlussinformationen
@@ -293,12 +285,13 @@ print_completion() {
     echo ""
     echo -e "${BLUE}Nützliche Befehle:${NC}"
     echo -e "  Status prüfen:     ${YELLOW}systemctl status ${SERVICE_NAME}${NC}"
-    echo -e "  Logs anzeigen:     ${YELLOW}cd ${INSTALL_DIR} && docker compose logs -f${NC}"
+    echo -e "  Logs anzeigen:     ${YELLOW}journalctl -u ${SERVICE_NAME} -f${NC}"
     echo -e "  Neustart:          ${YELLOW}systemctl restart ${SERVICE_NAME}${NC}"
     echo -e "  Update:            ${YELLOW}cd ${INSTALL_DIR} && bash update.sh${NC}"
     echo ""
     echo -e "${BLUE}Installationsverzeichnis:${NC} ${INSTALL_DIR}"
     echo -e "${BLUE}Datenbank:${NC} ${INSTALL_DIR}/data/car_data.db"
+    echo -e "${BLUE}Logs:${NC} journalctl -u ${SERVICE_NAME}"
     echo ""
 }
 
@@ -313,13 +306,13 @@ main() {
     check_os
     update_packages
     install_dependencies
-    install_docker
-    install_docker_compose
+    check_python
     clone_repository
     create_directories
-    start_application
+    setup_python_env
     create_systemd_service
     configure_firewall
+    wait_for_app
     
     print_completion
 }

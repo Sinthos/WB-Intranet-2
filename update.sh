@@ -9,7 +9,7 @@
 # Dieses Skript:
 # 1. Erstellt ein Backup der Datenbank
 # 2. Zieht die neuesten Änderungen von GitHub
-# 3. Baut den Docker-Container neu
+# 3. Installiert neue Abhängigkeiten
 # 4. Startet die Anwendung neu
 #
 
@@ -27,6 +27,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR="${SCRIPT_DIR}/backups"
 LOG_FILE="${SCRIPT_DIR}/update.log"
 MAX_BACKUPS=10
+SERVICE_NAME="wb-intranet"
 
 # Logging-Funktionen
 log() {
@@ -70,8 +71,8 @@ print_banner() {
 
 # Prüfe ob wir im richtigen Verzeichnis sind
 check_directory() {
-    if [[ ! -f "${SCRIPT_DIR}/docker-compose.yml" ]]; then
-        log_error "docker-compose.yml nicht gefunden!"
+    if [[ ! -f "${SCRIPT_DIR}/app.py" ]]; then
+        log_error "app.py nicht gefunden!"
         log_error "Bitte führe das Skript im WB-Intranet Verzeichnis aus."
         exit 1
     fi
@@ -83,18 +84,6 @@ check_directory() {
     fi
     
     log_success "Verzeichnis geprüft: ${SCRIPT_DIR}"
-}
-
-# Ermittle Docker Compose Befehl
-get_compose_cmd() {
-    if docker compose version &> /dev/null; then
-        echo "docker compose"
-    elif command -v docker-compose &> /dev/null; then
-        echo "docker-compose"
-    else
-        log_error "Docker Compose nicht gefunden!"
-        exit 1
-    fi
 }
 
 # Erstelle Backup der Datenbank
@@ -163,10 +152,12 @@ check_updates() {
         echo ""
         echo -e "${GREEN}Aktuelle Version: $(get_current_version)${NC}"
         echo ""
-        read -p "Möchten Sie trotzdem neu bauen? (j/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Jj]$ ]]; then
-            exit 0
+        if [[ "$FORCE_UPDATE" != "true" ]]; then
+            read -p "Möchten Sie trotzdem neu installieren? (j/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Jj]$ ]]; then
+                exit 0
+            fi
         fi
     else
         log_info "Update verfügbar!"
@@ -211,40 +202,81 @@ pull_updates() {
     log_success "Updates heruntergeladen"
 }
 
-# Stoppe Container
-stop_containers() {
-    log_info "Stoppe laufende Container..."
+# Stoppe Anwendung
+stop_app() {
+    log_info "Stoppe laufende Anwendung..."
     
-    cd "$SCRIPT_DIR"
-    local compose_cmd=$(get_compose_cmd)
+    # Versuche systemd Service zu stoppen
+    if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+        sudo systemctl stop "$SERVICE_NAME"
+        log_success "Service gestoppt"
+        return
+    fi
     
-    $compose_cmd down --remove-orphans 2>/dev/null || true
-    
-    log_success "Container gestoppt"
+    # Fallback: Suche und beende Python-Prozess
+    local pid=$(pgrep -f "python.*app.py" 2>/dev/null || true)
+    if [[ -n "$pid" ]]; then
+        kill "$pid" 2>/dev/null || true
+        sleep 2
+        # Force kill falls noch läuft
+        kill -9 "$pid" 2>/dev/null || true
+        log_success "Anwendung gestoppt (PID: $pid)"
+    else
+        log_info "Keine laufende Anwendung gefunden"
+    fi
 }
 
-# Baue Container neu
-build_containers() {
-    log_info "Baue Container neu..."
+# Installiere Abhängigkeiten
+install_dependencies() {
+    log_info "Installiere/Aktualisiere Abhängigkeiten..."
     
     cd "$SCRIPT_DIR"
-    local compose_cmd=$(get_compose_cmd)
     
-    $compose_cmd build --no-cache
+    # Prüfe ob venv existiert
+    if [[ -d "${SCRIPT_DIR}/venv" ]]; then
+        source "${SCRIPT_DIR}/venv/bin/activate"
+    elif [[ -d "${SCRIPT_DIR}/.venv" ]]; then
+        source "${SCRIPT_DIR}/.venv/bin/activate"
+    else
+        log_info "Erstelle virtuelle Umgebung..."
+        python3 -m venv "${SCRIPT_DIR}/venv"
+        source "${SCRIPT_DIR}/venv/bin/activate"
+    fi
     
-    log_success "Container gebaut"
+    # Upgrade pip
+    pip install --upgrade pip -q
+    
+    # Installiere Abhängigkeiten
+    pip install -r requirements.txt -q
+    
+    log_success "Abhängigkeiten installiert"
 }
 
-# Starte Container
-start_containers() {
-    log_info "Starte Container..."
+# Starte Anwendung
+start_app() {
+    log_info "Starte Anwendung..."
     
     cd "$SCRIPT_DIR"
-    local compose_cmd=$(get_compose_cmd)
     
-    $compose_cmd up -d
+    # Versuche systemd Service zu starten
+    if systemctl list-unit-files | grep -q "$SERVICE_NAME"; then
+        sudo systemctl start "$SERVICE_NAME"
+        log_success "Service gestartet"
+        return
+    fi
     
-    log_success "Container gestartet"
+    # Fallback: Starte direkt im Hintergrund
+    if [[ -d "${SCRIPT_DIR}/venv" ]]; then
+        source "${SCRIPT_DIR}/venv/bin/activate"
+    elif [[ -d "${SCRIPT_DIR}/.venv" ]]; then
+        source "${SCRIPT_DIR}/.venv/bin/activate"
+    fi
+    
+    nohup python app.py > "${SCRIPT_DIR}/app.log" 2>&1 &
+    local pid=$!
+    echo $pid > "${SCRIPT_DIR}/app.pid"
+    
+    log_success "Anwendung gestartet (PID: $pid)"
 }
 
 # Warte auf Anwendung
@@ -255,7 +287,7 @@ wait_for_app() {
     local attempt=1
     
     while [[ $attempt -le $max_attempts ]]; do
-        if curl -s -o /dev/null -w "%{http_code}" http://localhost:5000 | grep -q "200\|302"; then
+        if curl -s -o /dev/null -w "%{http_code}" http://localhost:5000 2>/dev/null | grep -q "200\|302"; then
             log_success "Anwendung ist bereit!"
             return 0
         fi
@@ -285,7 +317,7 @@ print_completion() {
     echo -e "${BLUE}Zugriff:${NC} http://localhost:5000"
     echo ""
     echo -e "${BLUE}Logs anzeigen:${NC}"
-    echo -e "  ${YELLOW}cd ${SCRIPT_DIR} && $(get_compose_cmd) logs -f${NC}"
+    echo -e "  ${YELLOW}tail -f ${SCRIPT_DIR}/app.log${NC}"
     echo ""
 }
 
@@ -293,11 +325,8 @@ print_completion() {
 rollback() {
     log_error "Update fehlgeschlagen - versuche Rollback..."
     
-    cd "$SCRIPT_DIR"
-    local compose_cmd=$(get_compose_cmd)
-    
-    # Versuche Container zu starten (mit altem Image falls vorhanden)
-    $compose_cmd up -d 2>/dev/null || true
+    # Versuche Anwendung zu starten
+    start_app 2>/dev/null || true
     
     log_warning "Bitte prüfen Sie den Status manuell"
     exit 1
@@ -317,12 +346,16 @@ main() {
     echo ""
     
     check_directory
-    create_backup
+    
+    if [[ "$SKIP_BACKUP" != "true" ]]; then
+        create_backup
+    fi
+    
     check_updates
-    stop_containers
+    stop_app
     pull_updates
-    build_containers
-    start_containers
+    install_dependencies
+    start_app
     wait_for_app
     
     local end_time=$(date +%s)
@@ -345,6 +378,16 @@ show_help() {
     echo "  -f, --force     Update ohne Bestätigung durchführen"
     echo "  -b, --backup    Nur Backup erstellen"
     echo "  --no-backup     Update ohne Backup durchführen"
+    echo ""
+    echo "Manuelles Update:"
+    echo "  1. cd /pfad/zu/WB-Intranet-2"
+    echo "  2. bash update.sh"
+    echo ""
+    echo "Oder manuell:"
+    echo "  1. git pull origin main"
+    echo "  2. source venv/bin/activate"
+    echo "  3. pip install -r requirements.txt"
+    echo "  4. Anwendung neu starten"
     echo ""
 }
 
