@@ -171,15 +171,64 @@ class VehicleIntake(db.Model):
                       'comfort_features', 'infotainment_features', 'safety_features',
                       'airbags', 'parking_features']
         
+        # Numerische Felder (Integer)
+        int_fields = ['mileage', 'num_owners', 'power_ps', 'power_kw', 'engine_capacity',
+                     'cylinders', 'co2_emission', 'gears', 'curb_weight', 'gross_weight',
+                     'trailer_load_braked', 'trailer_load_unbraked', 'support_load',
+                     'last_inspection_km', 'replacement_engine_km', 'replacement_transmission_km',
+                     'num_keys']
+        
+        # Numerische Felder (Float)
+        float_fields = ['tank_size', 'fuel_consumption', 'tire_tread_front', 'tire_tread_rear',
+                       'net_price', 'gross_price', 'transfer_costs', 'optional_price']
+        
+        # Boolean Felder
+        bool_fields = ['particle_filter', 'color_metallic', 'color_matte', 'oil_change_new',
+                      'brakes_new', 'timing_belt_new', 'replacement_engine', 
+                      'replacement_transmission', 'vat_deductible']
+        
         for key, value in data.items():
-            if hasattr(self, key):
+            if hasattr(self, key) and key not in ['id', 'created_at']:
                 if key in json_fields:
+                    # JSON-Felder
                     if isinstance(value, list):
                         setattr(self, key, json.dumps(value))
                     elif isinstance(value, str):
                         setattr(self, key, value)
+                elif key in int_fields:
+                    # Integer-Felder: leere Strings zu None
+                    if value == '' or value is None:
+                        setattr(self, key, None)
+                    else:
+                        try:
+                            setattr(self, key, int(value))
+                        except (ValueError, TypeError):
+                            setattr(self, key, None)
+                elif key in float_fields:
+                    # Float-Felder: leere Strings zu None
+                    if value == '' or value is None:
+                        setattr(self, key, None)
+                    else:
+                        try:
+                            setattr(self, key, float(value))
+                        except (ValueError, TypeError):
+                            setattr(self, key, None)
+                elif key in bool_fields:
+                    # Boolean-Felder
+                    if isinstance(value, bool):
+                        setattr(self, key, value)
+                    elif value in ['true', 'True', '1', 1]:
+                        setattr(self, key, True)
+                    elif value in ['false', 'False', '0', 0, '', None]:
+                        setattr(self, key, False)
+                    else:
+                        setattr(self, key, bool(value))
                 else:
-                    setattr(self, key, value)
+                    # String-Felder: leere Strings bleiben leer oder werden zu None
+                    if value == '':
+                        setattr(self, key, None)
+                    else:
+                        setattr(self, key, value)
     
     @staticmethod
     def get_fuel_type_options():
