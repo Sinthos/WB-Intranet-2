@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+
+{% block title %}Auto Berndl - Einstellungen{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-card {
+        margin-bottom: 1.5rem;
+    }
+
+    .settings-card .card-header {
+        background-color: transparent;
+        border-bottom: 1px solid var(--bs-border-color);
+        padding: 1rem 1.5rem;
+    }
+
+    .settings-card .card-header h5 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .version-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .version-item {
+        padding: 1rem;
+        background-color: var(--bs-tertiary-bg);
+        border-radius: 8px;
+    }
+
+    .version-item .label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--bs-secondary-color);
+        margin-bottom: 0.25rem;
+    }
+
+    .version-item .value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        font-family: monospace;
+    }
+
+    .update-status {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .update-status.available {
+        background-color: rgba(25, 135, 84, 0.1);
+        border: 1px solid rgba(25, 135, 84, 0.3);
+    }
+
+    .update-status.current {
+        background-color: rgba(13, 110, 253, 0.1);
+        border: 1px solid rgba(13, 110, 253, 0.3);
+    }
+
+    .update-status.error {
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+
+    .changelog-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .changelog-item {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .changelog-item:last-child {
+        border-bottom: none;
+    }
+
+    .changelog-item .commit-hash {
+        font-family: monospace;
+        font-size: 0.85rem;
+        color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.1);
+        padding: 0.125rem 0.5rem;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+
+    .changelog-item .commit-message {
+        flex: 1;
+        word-break: break-word;
+    }
+
+    .changelog-item .commit-date {
+        font-size: 0.85rem;
+        color: var(--bs-secondary-color);
+        white-space: nowrap;
+    }
+
+    .shortcut-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .shortcut-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+    }
+
+    .shortcut-keys {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .shortcut-keys kbd {
+        background-color: var(--bs-tertiary-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 4px;
+        padding: 0.125rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .backup-list {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .backup-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .backup-item:last-child {
+        border-bottom: none;
+    }
+
+    .system-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .system-info-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .system-info-item .label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--bs-secondary-color);
+    }
+
+    .system-info-item .value {
+        font-weight: 500;
+    }
+
+    .btn-update {
+        min-width: 150px;
+    }
+
+    .update-progress {
+        display: none;
+    }
+
+    .update-progress.show {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">
+        <i class="bi bi-gear text-primary me-2"></i>Einstellungen
+    </h1>
+</div>
+
+<div class="row">
+    <!-- Linke Spalte -->
+    <div class="col-lg-8">
+        <!-- Version & Update -->
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5><i class="bi bi-arrow-repeat text-primary"></i> Version & Updates</h5>
+            </div>
+            <div class="card-body">
+                <!-- Aktuelle Version -->
+                <div class="version-info mb-4">
+                    <div class="version-item">
+                        <div class="label">Version</div>
+                        <div class="value">v{{ version_info.version }}</div>
+                    </div>
+                    <div class="version-item">
+                        <div class="label">Commit</div>
+                        <div class="value">{{ version_info.commit }}</div>
+                    </div>
+                    <div class="version-item">
+                        <div class="label">Commit-Datum</div>
+                        <div class="value">{{ version_info.commit_date }}</div>
+                    </div>
+                </div>
+
+                <!-- Update Status -->
+                {% if update_info.error %}
+                <div class="update-status error">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                        <span>Fehler beim Prüfen auf Updates: {{ update_info.error }}</span>
+                    </div>
+                </div>
+                {% elif update_info.update_available %}
+                <div class="update-status available">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="bi bi-arrow-up-circle-fill text-success"></i>
+                                <strong>Update verfügbar!</strong>
+                            </div>
+                            <div class="text-muted small">
+                                Neuester Commit: {{ update_info.latest_commit }} 
+                                ({{ update_info.latest_commit_date }})
+                            </div>
+                            {% if update_info.latest_commit_message %}
+                            <div class="mt-1">
+                                <em>"{{ update_info.latest_commit_message }}"</em>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button class="btn btn-success btn-update" id="updateBtn" onclick="startUpdate()">
+                            <i class="bi bi-download me-1"></i> Update installieren
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="update-status current">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check-circle-fill text-primary"></i>
+                        <span>Die Anwendung ist auf dem neuesten Stand.</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Update Progress -->
+                <div class="update-progress" id="updateProgress">
+                    <div class="alert alert-info">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                            <span id="updateStatusText">Update wird durchgeführt...</span>
+                        </div>
+                        <div class="mt-2 small text-muted">
+                            Die Anwendung wird nach dem Update automatisch neu gestartet.
+                            Diese Seite wird in <span id="reloadCountdown">30</span> Sekunden neu geladen.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manuelles Update -->
+                <div class="mt-3">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="checkForUpdates()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Erneut prüfen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Changelog -->
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5><i class="bi bi-journal-text text-primary"></i> Changelog</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="changelog-list">
+                    {% if changelog %}
+                        {% for commit in changelog %}
+                        <div class="changelog-item">
+                            <span class="commit-hash">{{ commit.sha }}</span>
+                            <span class="commit-message">{{ commit.message }}</span>
+                            <span class="commit-date">{{ commit.date }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-journal-x fs-1 mb-2 d-block"></i>
+                            Keine Changelog-Einträge verfügbar.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tastenkürzel -->
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5><i class="bi bi-keyboard text-primary"></i> Tastenkürzel</h5>
+            </div>
+            <div class="card-body">
+                <div class="shortcut-list">
+                    <div class="shortcut-item">
+                        <span>Neues Fahrzeug</span>
+                        <div class="shortcut-keys">
+                            <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>N</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Fahrzeugliste</span>
+                        <div class="shortcut-keys">
+                            <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>L</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Startseite</span>
+                        <div class="shortcut-keys">
+                            <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>H</kbd>
+                        </div>
+                    </div>
+                    <div class="shortcut-item">
+                        <span>Design wechseln</span>
+                        <div class="shortcut-keys">
+                            <kbd>Klick auf</kbd><kbd><i class="bi bi-moon-fill"></i></kbd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rechte Spalte -->
+    <div class="col-lg-4">
+        <!-- Schnellaktionen -->
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5><i class="bi bi-lightning text-primary"></i> Schnellaktionen</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('views.car_form') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> Neues Fahrzeug
+                    </a>
+                    <a href="{{ url_for('views.view_cars') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-list-ul me-1"></i> Fahrzeugübersicht
+                    </a>
+                    <button class="btn btn-outline-secondary" onclick="createBackup()">
+                        <i class="bi bi-download me-1"></i> Backup erstellen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System-Info -->
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle text-primary"></i> System-Info</h5>
+            </div>
+            <div class="card-body">
+                <div class="system-info">
+                    <div class="system-info-item">
+                        <span class="label">Repository</span>
+                        <a href="https://github.com/Sinthos/WB-Intranet-2" target="_blank" class="value">
+                            Sinthos/WB-Intranet-2
+                        </a>
+                    </div>
+                    <div class="system-info-item">
+                        <span class="label">Framework</span>
+                        <span class="value">Flask + Bootstrap 5</span>
+                    </div>
+                    <div class="system-info-item">
+                        <span class="label">Datenbank</span>
+                        <span class="value">SQLite</span>
+                    </div>
+                    <div class="system-info-item">
+                        <span class="label">Port</span>
+                        <span class="value">5000</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hilfe -->
+        <div class="card settings-card">
+            <div class="card-header">
+                <h5><i class="bi bi-question-circle text-primary"></i> Hilfe</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Bei Problemen oder Fragen können Sie ein Issue auf GitHub erstellen.
+                </p>
+                <a href="https://github.com/Sinthos/WB-Intranet-2/issues" 
+                   target="_blank" 
+                   class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="bi bi-github me-1"></i> Issue erstellen
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Update starten
+    async function startUpdate() {
+        const btn = document.getElementById('updateBtn');
+        const progress = document.getElementById('updateProgress');
+        
+        if (!confirm('Möchten Sie das Update jetzt installieren? Die Anwendung wird dabei neu gestartet.')) {
+            return;
+        }
+        
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Wird aktualisiert...';
+        progress.classList.add('show');
+        
+        try {
+            const response = await fetch('/api/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                document.getElementById('updateStatusText').textContent = 'Update gestartet. Warte auf Neustart...';
+                startReloadCountdown();
+            } else {
+                throw new Error(data.error || 'Unbekannter Fehler');
+            }
+        } catch (error) {
+            progress.classList.remove('show');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-download me-1"></i> Update installieren';
+            showToast('Fehler beim Update: ' + error.message, 'error');
+        }
+    }
+    
+    // Countdown für Reload
+    function startReloadCountdown() {
+        let seconds = 30;
+        const countdownEl = document.getElementById('reloadCountdown');
+        
+        const interval = setInterval(() => {
+            seconds--;
+            countdownEl.textContent = seconds;
+            
+            if (seconds <= 0) {
+                clearInterval(interval);
+                window.location.reload();
+            }
+        }, 1000);
+        
+        // Versuche früher zu laden, wenn Server wieder erreichbar
+        const checkServer = setInterval(async () => {
+            try {
+                const response = await fetch('/api/version', { 
+                    method: 'GET',
+                    cache: 'no-store'
+                });
+                if (response.ok) {
+                    clearInterval(checkServer);
+                    clearInterval(interval);
+                    window.location.reload();
+                }
+            } catch (e) {
+                // Server noch nicht bereit
+            }
+        }, 2000);
+    }
+    
+    // Auf Updates prüfen
+    async function checkForUpdates() {
+        showLoading();
+        try {
+            const response = await fetch('/api/check-update');
+            const data = await response.json();
+            
+            hideLoading();
+            
+            if (data.update_available) {
+                showToast('Update verfügbar! Neuester Commit: ' + data.latest_commit, 'success');
+            } else if (data.error) {
+                showToast('Fehler: ' + data.error, 'error');
+            } else {
+                showToast('Keine Updates verfügbar.', 'info');
+            }
+            
+            // Seite neu laden um Status zu aktualisieren
+            setTimeout(() => window.location.reload(), 2000);
+        } catch (error) {
+            hideLoading();
+            showToast('Fehler beim Prüfen auf Updates', 'error');
+        }
+    }
+    
+    // Backup erstellen
+    async function createBackup() {
+        showToast('Backup-Funktion wird über die Kommandozeile ausgeführt: bash update.sh -b', 'info');
+    }
+</script>
+{% endblock %}

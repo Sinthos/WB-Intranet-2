@@ -1,73 +1,512 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Auto Berndl Intern{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .navbar-brand img {
-            height: 40px;
-            margin-right: 10px;
+        :root {
+            --sidebar-width: 250px;
+            --navbar-height: 60px;
+            --content-max-width: 1800px;
         }
-        .main-content {
-            margin-top: 2rem;
-            margin-bottom: 2rem;
+
+        /* Dark Mode Variablen */
+        [data-bs-theme="dark"] {
+            --bs-body-bg: #1a1d21;
+            --bs-body-color: #e9ecef;
+            --card-bg: #212529;
+            --sidebar-bg: #212529;
+            --navbar-bg: #212529;
         }
-        .nav-item {
-            margin-right: 1rem;
+
+        [data-bs-theme="light"] {
+            --card-bg: #ffffff;
+            --sidebar-bg: #f8f9fa;
+            --navbar-bg: #ffffff;
         }
-        .nav-link {
-            color: #495057;
-            font-weight: 500;
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        .nav-link:hover {
-            color: #0d6efd;
+
+        /* Navbar Styles */
+        .navbar {
+            height: var(--navbar-height);
+            background-color: var(--navbar-bg) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1030;
         }
-        .nav-link.active {
-            color: #0d6efd;
+
+        .navbar-brand {
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-brand img {
+            height: 36px;
+        }
+
+        .nav-link {
+            color: var(--bs-body-color);
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+
+        .nav-link.active {
+            background-color: #0d6efd;
+            color: white !important;
+        }
+
+        .nav-link i {
+            margin-right: 8px;
+        }
+
+        /* Version Badge */
+        .version-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            background-color: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        [data-bs-theme="dark"] .version-badge {
+            background-color: rgba(13, 110, 253, 0.2);
+        }
+
+        /* Main Content */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: var(--content-max-width);
+            margin: 0 auto;
+        }
+
+        /* Responsive Container */
+        @media (min-width: 1400px) {
+            .main-content {
+                padding: 2rem 3rem;
+            }
+        }
+
+        @media (min-width: 1920px) {
+            :root {
+                --content-max-width: 1900px;
+            }
+        }
+
+        @media (min-width: 2560px) {
+            :root {
+                --content-max-width: 2400px;
+            }
+            .main-content {
+                padding: 2rem 4rem;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--card-bg);
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--navbar-bg);
+            border-top: 1px solid var(--bs-border-color);
+            padding: 1rem 0;
+            font-size: 0.875rem;
+            color: var(--bs-secondary-color);
+        }
+
+        .footer a {
+            color: var(--bs-body-color);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: #0d6efd;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            color: var(--bs-body-color);
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        [data-bs-theme="dark"] .theme-toggle:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        /* Toast Container */
+        .toast-container {
+            position: fixed;
+            top: calc(var(--navbar-height) + 1rem);
+            right: 1rem;
+            z-index: 1100;
+        }
+
+        .toast {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .toast-success {
+            background-color: #198754;
+            color: white;
+        }
+
+        .toast-error {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .toast-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .toast-info {
+            background-color: #0dcaf0;
+            color: #212529;
+        }
+
+        /* Update Badge */
+        .update-available {
+            position: relative;
+        }
+
+        .update-available::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 8px;
+            height: 8px;
+            background-color: #dc3545;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Utility Classes */
+        .text-truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Loading Spinner */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        [data-bs-theme="dark"] .loading-overlay {
+            background: rgba(26, 29, 33, 0.8);
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        /* Responsive Navigation */
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                background-color: var(--navbar-bg);
+                padding: 1rem;
+                border-radius: 8px;
+                margin-top: 0.5rem;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Laden...</span>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container-fluid px-3 px-lg-4">
             <a class="navbar-brand" href="{{ url_for('home') }}">
+                <i class="bi bi-car-front-fill text-primary"></i>
                 Auto Berndl
             </a>
+            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'home' %}active{% endif %}"
-                           href="{{ url_for('home') }}">Homepage</a>
+                           href="{{ url_for('home') }}">
+                            <i class="bi bi-house"></i>Homepage
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'views.car_form' %}active{% endif %}"
-                           href="{{ url_for('views.car_form') }}">Fahrzeugauszeichnung</a>
+                           href="{{ url_for('views.car_form') }}">
+                            <i class="bi bi-file-earmark-plus"></i>Fahrzeugauszeichnung
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'intake_form' %}active{% endif %}"
-                           href="{{ url_for('intake_form') }}">Aufnahmeblatt</a>
+                           href="{{ url_for('intake_form') }}">
+                            <i class="bi bi-clipboard-plus"></i>Aufnahmeblatt
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'views.view_cars' %}active{% endif %}"
-                           href="{{ url_for('views.view_cars') }}">Fahrzeugübersicht</a>
+                           href="{{ url_for('views.view_cars') }}">
+                            <i class="bi bi-list-ul"></i>Fahrzeugübersicht
+                        </a>
                     </li>
                 </ul>
+                
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Version Badge -->
+                    <a href="{{ url_for('settings') }}" class="version-badge text-decoration-none" id="versionBadge">
+                        {{ version_info.display }}
+                    </a>
+                    
+                    <!-- Settings Link -->
+                    <a href="{{ url_for('settings') }}" 
+                       class="nav-link p-2 {% if request.endpoint == 'settings' %}active{% endif %}"
+                       title="Einstellungen"
+                       id="settingsLink">
+                        <i class="bi bi-gear"></i>
+                    </a>
+                    
+                    <!-- Theme Toggle -->
+                    <button class="theme-toggle" id="themeToggle" title="Design wechseln">
+                        <i class="bi bi-moon-fill" id="themeIcon"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="container main-content">
-        {% block content %}{% endblock %}
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container-fluid px-3 px-lg-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <span>&copy; {{ now().year if now is defined else '2024' }} Auto Berndl</span>
+                        <span class="text-muted">|</span>
+                        <span class="text-muted small">{{ version_info.display }}</span>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <a href="{{ url_for('settings') }}">Einstellungen</a>
+                        <a href="https://github.com/Sinthos/WB-Intranet-2" target="_blank" rel="noopener">
+                            <i class="bi bi-github"></i> GitHub
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme Management
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-bs-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+
+        function updateThemeIcon(theme) {
+            themeIcon.className = theme === 'light' ? 'bi bi-moon-fill' : 'bi bi-sun-fill';
+        }
+
+        // Toast Notification System
+        window.showToast = function(message, type = 'info', duration = 5000) {
+            const container = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            
+            const icons = {
+                success: 'bi-check-circle-fill',
+                error: 'bi-x-circle-fill',
+                warning: 'bi-exclamation-triangle-fill',
+                info: 'bi-info-circle-fill'
+            };
+
+            const toastHtml = `
+                <div id="${toastId}" class="toast toast-${type}" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-body d-flex align-items-center gap-2">
+                        <i class="bi ${icons[type] || icons.info}"></i>
+                        <span>${message}</span>
+                        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', toastHtml);
+            
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { delay: duration });
+            toast.show();
+            
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        };
+
+        // Loading Overlay
+        window.showLoading = function() {
+            document.getElementById('loadingOverlay').classList.add('show');
+        };
+
+        window.hideLoading = function() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        };
+
+        // Check for Updates (optional - runs in background)
+        async function checkForUpdates() {
+            try {
+                const response = await fetch('/api/check-update');
+                const data = await response.json();
+                
+                if (data.update_available) {
+                    const settingsLink = document.getElementById('settingsLink');
+                    if (settingsLink) {
+                        settingsLink.classList.add('update-available');
+                        settingsLink.title = 'Update verfügbar!';
+                    }
+                }
+            } catch (e) {
+                // Silently fail - update check is not critical
+            }
+        }
+
+        // Check for updates on page load (with delay to not block rendering)
+        setTimeout(checkForUpdates, 3000);
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + Shift + N = Neues Fahrzeug
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+                e.preventDefault();
+                window.location.href = '{{ url_for("views.car_form") }}';
+            }
+            
+            // Ctrl/Cmd + Shift + L = Fahrzeugliste
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
+                e.preventDefault();
+                window.location.href = '{{ url_for("views.view_cars") }}';
+            }
+            
+            // Ctrl/Cmd + Shift + H = Home
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'H') {
+                e.preventDefault();
+                window.location.href = '{{ url_for("home") }}';
+            }
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

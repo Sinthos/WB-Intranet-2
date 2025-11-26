@@ -1,8 +1,10 @@
 # app.py
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, jsonify, request
 import os
+import subprocess
 from models import db, Car
 from routes import car_routes, view_routes
+from version_utils import get_full_version_info, check_for_updates, get_changelog
 
 app = Flask(__name__)
 
@@ -38,6 +40,12 @@ def numberformat_filter(value):
     except (ValueError, TypeError):
         return value
 
+
+@app.context_processor
+def inject_version():
+    """Injiziert Versionsinformationen in alle Templates."""
+    return {'version_info': get_full_version_info()}
+
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     """Route für statische Dateien"""
@@ -53,6 +61,83 @@ def home():
 def intake_form():
     """Aufnahmeblatt Route"""
     return render_template('intake_form.html')
+
+
+# ============== API-Endpunkte für Versionierung ==============
+
+@app.route('/api/version')
+def api_version():
+    """Gibt die aktuelle Version zurück."""
+    return jsonify(get_full_version_info())
+
+
+@app.route('/api/check-update')
+def api_check_update():
+    """Prüft auf verfügbare Updates."""
+    return jsonify(check_for_updates())
+
+
+@app.route('/api/changelog')
+def api_changelog():
+    """Gibt die letzten Commits als Changelog zurück."""
+    limit = request.args.get('limit', 10, type=int)
+    return jsonify(get_changelog(limit=limit))
+
+
+@app.route('/api/update', methods=['POST'])
+def api_update():
+    """
+    Führt ein Update durch (nur von localhost erlaubt).
+    Startet das update.sh Skript.
+    """
+    # Sicherheitscheck: Nur localhost erlauben
+    if request.remote_addr not in ['127.0.0.1', '::1', 'localhost']:
+        return jsonify({
+            'success': False,
+            'error': 'Update nur von localhost erlaubt'
+        }), 403
+    
+    try:
+        # Pfad zum Update-Skript
+        update_script = os.path.join(app.root_path, 'update.sh')
+        
+        if not os.path.exists(update_script):
+            return jsonify({
+                'success': False,
+                'error': 'Update-Skript nicht gefunden'
+            }), 404
+        
+        # Starte Update-Skript im Hintergrund
+        subprocess.Popen(
+            ['bash', update_script],
+            cwd=app.root_path,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Update gestartet. Die Anwendung wird in Kürze neu gestartet.'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/settings')
+def settings():
+    """Einstellungsseite mit Update-Funktion."""
+    version_info = get_full_version_info()
+    update_info = check_for_updates()
+    changelog = get_changelog(limit=10)
+    return render_template('settings.html', 
+                         version_info=version_info,
+                         update_info=update_info,
+                         changelog=changelog)
 
 @app.errorhandler(404)
 def not_found_error(error):

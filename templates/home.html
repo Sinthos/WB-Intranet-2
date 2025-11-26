@@ -2,39 +2,452 @@
 
 {% block title %}Auto Berndl - Startseite{% endblock %}
 
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+    }
+
+    .hero-section h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .hero-section p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin-bottom: 0;
+    }
+
+    /* Stats Cards */
+    .stats-section {
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .stat-icon.primary {
+        background-color: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+
+    .stat-icon.success {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+
+    .stat-icon.warning {
+        background-color: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+
+    .stat-icon.info {
+        background-color: rgba(13, 202, 240, 0.1);
+        color: #0dcaf0;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--bs-secondary-color);
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+        margin-bottom: 2rem;
+    }
+
+    .action-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        height: 100%;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        color: inherit;
+    }
+
+    .action-card .icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .action-card .icon.primary {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .action-card .icon.success {
+        background-color: #198754;
+        color: white;
+    }
+
+    .action-card .icon.info {
+        background-color: #0dcaf0;
+        color: white;
+    }
+
+    .action-card .icon.secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .action-card h5 {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .action-card p {
+        font-size: 0.875rem;
+        color: var(--bs-secondary-color);
+        margin-bottom: 0;
+    }
+
+    /* Recent Activity */
+    .recent-section {
+        margin-bottom: 2rem;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .section-header h4 {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .recent-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--card-bg);
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+
+    .recent-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .recent-item .icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+
+    .recent-item .content {
+        flex: 1;
+    }
+
+    .recent-item .title {
+        font-weight: 500;
+        margin-bottom: 0.125rem;
+    }
+
+    .recent-item .meta {
+        font-size: 0.75rem;
+        color: var(--bs-secondary-color);
+    }
+
+    .recent-item .action {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .recent-item:hover .action {
+        opacity: 1;
+    }
+
+    /* Responsive Grid */
+    @media (min-width: 1400px) {
+        .action-cards-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    @media (min-width: 1920px) {
+        .stats-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--bs-secondary-color);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">Willkommen im internen Bereich</h1>
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Fahrzeugauszeichnung</h5>
-                        <p class="card-text">Erstellen Sie professionelle Fahrzeugauszeichnungen für Ihren Fahrzeugbestand.</p>
-                        <a href="{{ url_for('views.car_form') }}" class="btn btn-primary">Zur Fahrzeugauszeichnung</a>
-                    </div>
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <h1>Willkommen im internen Bereich</h1>
+            <p>Verwalten Sie Fahrzeugauszeichnungen, Aufnahmeblätter und mehr.</p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+            <a href="{{ url_for('views.car_form') }}" class="btn btn-light btn-lg">
+                <i class="bi bi-plus-circle me-2"></i>Neues Fahrzeug
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="stats-section">
+    <div class="row g-3" id="statsContainer">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <i class="bi bi-car-front"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="totalCars">-</div>
+                    <div class="stat-label">Fahrzeuge gesamt</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Aufnahmeblatt</h5>
-                        <p class="card-text">Erfassen Sie neue Fahrzeuge in Ihrem Bestand mit dem digitalen Aufnahmeblatt.</p>
-                        <a href="{{ url_for('intake_form') }}" class="btn btn-primary">Zum Aufnahmeblatt</a>
-                    </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i class="bi bi-currency-euro"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="avgPrice">-</div>
+                    <div class="stat-label">Ø Preis</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Fahrzeugübersicht</h5>
-                        <p class="card-text">Sehen Sie sich die Liste der in der Datenbank gespeicherten Fahrzeuge an.</p>
-                        <a href="{{ url_for('views.view_cars') }}" class="btn btn-primary">Zur Fahrzeugübersicht</a>
-                    </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon warning">
+                    <i class="bi bi-speedometer2"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="avgMileage">-</div>
+                    <div class="stat-label">Ø Kilometer</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon info">
+                    <i class="bi bi-calendar-plus"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="recentCount">-</div>
+                    <div class="stat-label">Diese Woche</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <div class="section-header">
+        <h4><i class="bi bi-lightning-charge text-primary me-2"></i>Schnellzugriff</h4>
+    </div>
+    <div class="row g-3">
+        <div class="col-sm-6 col-lg-3">
+            <a href="{{ url_for('views.car_form') }}" class="action-card">
+                <div class="icon primary">
+                    <i class="bi bi-file-earmark-plus"></i>
+                </div>
+                <h5>Fahrzeugauszeichnung</h5>
+                <p>Erstellen Sie professionelle Fahrzeugauszeichnungen für Ihren Bestand.</p>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a href="{{ url_for('intake_form') }}" class="action-card">
+                <div class="icon success">
+                    <i class="bi bi-clipboard-plus"></i>
+                </div>
+                <h5>Aufnahmeblatt</h5>
+                <p>Erfassen Sie neue Fahrzeuge mit dem digitalen Aufnahmeblatt.</p>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a href="{{ url_for('views.view_cars') }}" class="action-card">
+                <div class="icon info">
+                    <i class="bi bi-list-ul"></i>
+                </div>
+                <h5>Fahrzeugübersicht</h5>
+                <p>Sehen Sie alle gespeicherten Fahrzeuge in der Datenbank.</p>
+            </a>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <a href="{{ url_for('settings') }}" class="action-card">
+                <div class="icon secondary">
+                    <i class="bi bi-gear"></i>
+                </div>
+                <h5>Einstellungen</h5>
+                <p>Verwalten Sie Updates und Systemeinstellungen.</p>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="recent-section">
+    <div class="section-header">
+        <h4><i class="bi bi-clock-history text-primary me-2"></i>Zuletzt hinzugefügt</h4>
+        <a href="{{ url_for('views.view_cars') }}" class="btn btn-sm btn-outline-primary">
+            Alle anzeigen
+        </a>
+    </div>
+    <div id="recentCars">
+        <div class="empty-state">
+            <i class="bi bi-car-front d-block"></i>
+            <p>Lade Fahrzeuge...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Dashboard-Daten laden
+    async function loadDashboardData() {
+        try {
+            // Lade Fahrzeugstatistiken
+            const response = await fetch('/api/cars/stats');
+            if (response.ok) {
+                const stats = await response.json();
+                
+                document.getElementById('totalCars').textContent = stats.total || '0';
+                document.getElementById('avgPrice').textContent = stats.avg_price 
+                    ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(stats.avg_price)
+                    : '-';
+                document.getElementById('avgMileage').textContent = stats.avg_mileage 
+                    ? new Intl.NumberFormat('de-DE').format(Math.round(stats.avg_mileage)) + ' km'
+                    : '-';
+                document.getElementById('recentCount').textContent = stats.recent_count || '0';
+            }
+        } catch (e) {
+            console.log('Stats nicht verfügbar');
+        }
+        
+        try {
+            // Lade letzte Fahrzeuge
+            const recentResponse = await fetch('/api/cars/recent?limit=5');
+            if (recentResponse.ok) {
+                const cars = await recentResponse.json();
+                renderRecentCars(cars);
+            }
+        } catch (e) {
+            console.log('Recent cars nicht verfügbar');
+            document.getElementById('recentCars').innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-car-front d-block"></i>
+                    <p>Keine Fahrzeuge vorhanden.</p>
+                    <a href="{{ url_for('views.car_form') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Erstes Fahrzeug anlegen
+                    </a>
+                </div>
+            `;
+        }
+    }
+    
+    function renderRecentCars(cars) {
+        const container = document.getElementById('recentCars');
+        
+        if (!cars || cars.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-car-front d-block"></i>
+                    <p>Keine Fahrzeuge vorhanden.</p>
+                    <a href="{{ url_for('views.car_form') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Erstes Fahrzeug anlegen
+                    </a>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = cars.map(car => `
+            <div class="recent-item">
+                <div class="icon">
+                    <i class="bi bi-car-front"></i>
+                </div>
+                <div class="content">
+                    <div class="title">${car.brand} ${car.model}</div>
+                    <div class="meta">
+                        ${car.listing_number} • ${new Intl.NumberFormat('de-DE').format(car.price)} € • ${car.created_at}
+                    </div>
+                </div>
+                <a href="/cars/${car.id}/pdf" class="action btn btn-sm btn-outline-primary">
+                    <i class="bi bi-file-pdf"></i>
+                </a>
+            </div>
+        `).join('');
+    }
+    
+    // Daten beim Laden der Seite abrufen
+    document.addEventListener('DOMContentLoaded', loadDashboardData);
+</script>
 {% endblock %}
