@@ -88,14 +88,7 @@ def _load_build_info() -> tuple:
 
 def get_git_commit_hash(short: bool = True) -> str:
     """Gibt den aktuellen Git-Commit-Hash zurück."""
-    # Zuerst versuchen aus Build-Info-Datei zu laden (schneller und zuverlässiger)
-    commit_short, commit_full, _ = _load_build_info()
-    if short and commit_short:
-        return commit_short
-    elif not short and commit_full:
-        return commit_full
-    
-    # Fallback: Git-Befehl versuchen
+    # Zuerst Git versuchen (immer aktuell nach git pull)
     try:
         git_exe = _get_git_executable()
         cmd = [git_exe, 'rev-parse', '--short', 'HEAD'] if short else [git_exe, 'rev-parse', 'HEAD']
@@ -109,22 +102,24 @@ def get_git_commit_hash(short: bool = True) -> str:
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
     except FileNotFoundError:
-        # Git ist nicht installiert
+        # Git ist nicht installiert - Fallback auf Build-Info
         pass
     except Exception:
         pass
+    
+    # Fallback: Build-Info-Datei (für Umgebungen ohne Git)
+    commit_short, commit_full, _ = _load_build_info()
+    if short and commit_short:
+        return commit_short
+    elif not short and commit_full:
+        return commit_full
     
     return "lokal"
 
 
 def get_git_commit_date() -> str:
     """Gibt das Datum des letzten Commits zurück."""
-    # Zuerst versuchen aus Build-Info-Datei zu laden
-    _, _, commit_date = _load_build_info()
-    if commit_date:
-        return commit_date
-    
-    # Fallback: Git-Befehl versuchen
+    # Zuerst Git versuchen (immer aktuell nach git pull)
     try:
         git_exe = _get_git_executable()
         result = subprocess.run(
@@ -140,10 +135,15 @@ def get_git_commit_date() -> str:
             dt = datetime.strptime(date_str[:19], '%Y-%m-%d %H:%M:%S')
             return dt.strftime('%d.%m.%Y %H:%M')
     except FileNotFoundError:
-        # Git ist nicht installiert
+        # Git ist nicht installiert - Fallback auf Build-Info
         pass
     except Exception:
         pass
+    
+    # Fallback: Build-Info-Datei (für Umgebungen ohne Git)
+    _, _, commit_date = _load_build_info()
+    if commit_date:
+        return commit_date
     
     # Letzter Fallback: Datei-Änderungsdatum der VERSION-Datei
     try:
