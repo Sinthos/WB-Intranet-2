@@ -9,38 +9,57 @@
       size: A4;
       margin: 0;
     }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 210mm;
-      height: 297mm;
-      font-family: Arial, sans-serif;
-      font-size: 11px;
-      background: white;
-      overflow: hidden;
-    }
     @media print {
-      html, body {
+      html {
         width: 210mm;
         height: 297mm;
-        overflow: hidden;
+      }
+      body {
+        margin: 0;
+        padding: 0;
       }
       .page {
-        page-break-after: avoid;
-        page-break-inside: avoid;
-        overflow: hidden;
+        margin: 0;
+        border: 0;
+        padding: 10px;
+        width: 190mm;
+        min-height: 297mm;
+        position: relative;
+      }
+      .container-fluid {
+        margin: 0 auto;
+        width: 100%;
       }
       .watermark {
         display: block !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
-      .header-line,
+      .header-line {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .vehicle-name-wrapper {
+        background: transparent !important;
+        -webkit-print-color-adjust: none !important;
+        print-color-adjust: none !important;
+      }
+      .vehicle-name {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-size: 40px;
+        font-weight: 900;
+        color: #000;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        margin: 5px 0 15px;
+        line-height: 1.1;
+        padding: 10px;
+        background: transparent;
+        overflow: hidden;
+        height: 82px;
+      }
       .left-column,
       .right-column,
       .warranty-badge,
@@ -49,106 +68,121 @@
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
+      .finance-box,
+      .price {
+        color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
       img {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         display: block !important;
         visibility: visible !important;
+        max-width: 100% !important;
       }
+      .bank-logo,
+      .bank-logo img,
+      .footer-logo,
+      .footer-logo img {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        display: block !important;
+        visibility: visible !important;
+        filter: none !important;
+      }
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: white;
+      font-family: Arial, sans-serif;
     }
     .page {
       position: relative;
-      width: 210mm;
-      height: 297mm;
-      max-height: 297mm;
-      padding: 6mm 8mm;
+      width: 190mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 10px;
       background: white;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
     }
     .watermark {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) rotate(-45deg);
-      font-size: 100px;
+      font-size: 120px;
       color: rgba(0,0,0,0.03);
       white-space: nowrap;
       pointer-events: none;
-      z-index: 0;
-    }
-    .content {
-      position: relative;
-      z-index: 1;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      max-height: calc(297mm - 12mm);
-      overflow: hidden;
     }
     .header-line {
       display: flex;
       justify-content: space-between;
       align-items: center;
       background-color: #f8f9fa;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 10px;
-      margin-bottom: 4px;
-      flex-shrink: 0;
+      padding: 8px 12px;
+      border-radius: 5px;
+      font-size: 0.9em;
+      margin-bottom: 10px;
     }
     .number-box {
       border: 1px solid black;
-      padding: 2px 6px;
-      font-weight: bold;
+      padding: 2px 8px;
+    }
+    .vehicle-name-wrapper {
+      background: transparent;
     }
     .vehicle-name {
+      display: flex;
+      justify-content: center;
+      align-items: center;
       text-align: center;
-      font-size: 28px;
+      font-size: 45px;
       font-weight: 900;
       color: #000;
-      margin: 2px 0 6px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+      margin: 5px 0 15px;
       line-height: 1.1;
-      padding: 4px;
-      flex-shrink: 0;
+      padding: 10px;
+      background: transparent;
+      overflow: hidden;
+      height: 82px;
     }
     .content-container {
       display: flex;
-      gap: 10px;
-      margin-bottom: 6px;
-      flex: 1;
-      min-height: 0;
-      overflow: hidden;
+      gap: 30px;
+      margin-bottom: 15px;
+      justify-content: space-between;
     }
     .left-column, .right-column {
-      flex: 1;
+      flex: 0 0 49%;
       background: #f8f9fa;
-      padding: 8px;
-      border-radius: 6px;
+      padding: 15px;
+      border-radius: 8px;
+      min-height: 480px;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
     }
     .tech-data-title, .features-title {
       font-weight: bold;
-      font-size: 12px;
+      font-size: 1.2em;
       border-bottom: 2px solid #dee2e6;
-      margin-bottom: 6px;
-      padding-bottom: 3px;
-      flex-shrink: 0;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
     }
     .tech-data-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 10px;
+      font-size: 1em;
+      margin-bottom: 20px;
     }
     .tech-data-table td {
-      padding: 4px 4px;
+      padding: 12px 8px;
       border-bottom: 1px solid #dee2e6;
     }
     .tech-data-table td:first-child {
-      width: 45%;
+      width: 40%;
       color: #666;
     }
     .tech-data-table td:last-child {
@@ -159,17 +193,15 @@
       color: white;
       text-align: center;
       font-weight: bold;
-      font-size: 11px;
-      padding: 5px;
-      border-radius: 6px;
-      margin: 6px 0;
-      flex-shrink: 0;
+      font-size: 1.3em;
+      padding: 8px;
+      border-radius: 8px;
+      margin: 15px 0;
     }
     .bank-logo {
       display: block;
-      margin: 4px auto 0;
-      width: 160px;
-      flex-shrink: 0;
+      margin: 15px auto;
+      width: 250px;
     }
     .bank-logo img {
       width: 100%;
@@ -180,99 +212,85 @@
       list-style: none;
       padding: 0;
       margin: 0;
-      flex: 1;
-      overflow: hidden;
     }
     .features-list li {
-      font-size: 9px;
-      padding-left: 12px;
-      margin-bottom: 2px;
+      font-size: 1.1em;
+      padding-left: 20px;
+      margin-bottom: 8px;
       border-bottom: 1px solid #dee2e6;
       position: relative;
-      padding-bottom: 2px;
-      line-height: 1.2;
+      padding-bottom: 6px;
     }
     .features-list li::before {
       content: "";
       position: absolute;
       left: 0;
-      top: 4px;
-      width: 5px;
-      height: 5px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 10px;
+      height: 10px;
       background: #ccc;
       border-radius: 50%;
     }
     .warranty-badge {
       background: #e0e0e0;
       text-align: center;
-      font-size: 9px;
-      padding: 4px;
-      margin-bottom: 6px;
-      flex-shrink: 0;
+      font-size: 0.9em;
+      padding: 6px;
+      margin: 15px 0;
     }
     .price-section {
       display: grid;
-      grid-template-columns: 90px 1fr;
-      gap: 10px;
+      grid-template-columns: 1fr 2fr;
+      gap: 15px;
       background: #f8f9fa;
-      border-radius: 6px;
-      padding: 8px;
-      margin-bottom: 6px;
-      flex-shrink: 0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
     }
     .eco-section {
       text-align: center;
     }
     .eco-label {
       font-weight: bold;
-      font-size: 9px;
-      margin-bottom: 2px;
-    }
-    .eco-badge svg {
-      width: 60px;
-      height: 60px;
+      font-size: 1.1em;
+      margin-bottom: 10px;
     }
     .price-box {
       background: white;
-      border-radius: 6px;
-      padding: 8px 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .price-title {
-      font-size: 11px;
-      margin-bottom: 2px;
+      font-size: 1.2em;
+      margin-bottom: 10px;
     }
     .price {
       color: #e4002b;
-      font-size: 32px;
+      font-size: 4em;
       font-weight: bold;
       text-align: right;
-      line-height: 1;
     }
     .price-info {
       text-align: right;
       color: #666;
-      font-size: 8px;
+      font-size: 0.85em;
       border-top: 1px solid #dee2e6;
-      padding-top: 4px;
-      margin-top: 4px;
+      padding-top: 12px;
     }
     .footer {
       border-top: 1px solid #dee2e6;
-      padding-top: 6px;
-      margin-top: auto;
-      flex-shrink: 0;
+      padding-top: 15px;
+      margin-top: 30px;
     }
     .footer-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      font-size: 8px;
+      font-size: 0.85em;
     }
     .footer-col {
       flex: 1;
-    }
-    .footer-col:first-child {
       text-align: left;
     }
     .footer-col:nth-child(2) {
@@ -282,7 +300,7 @@
       text-align: right;
     }
     .footer-logo {
-      width: 130px;
+      width: 250px;
       margin: 0 auto;
     }
     .footer-logo img {
@@ -291,24 +309,26 @@
       display: block;
     }
     .vermittler-text {
-      font-size: 7px;
+      font-size: 0.8em;
       text-align: center;
-      line-height: 1.2;
+      padding-top: 10px;
     }
   </style>
 </head>
 <body>
   <div class="page">
     <div class="watermark">AUTO BERNDL</div>
-    <div class="content">
+    <div class="container-fluid">
       <div class="header-line">
         <span>Ein Beispiel aus unserer Großauswahl:</span>
         <span class="number-box">{{ car.listing_number }}</span>
         <span>Finanzierung-Leasing-Versicherung</span>
       </div>
-      
-      <div class="vehicle-name">{{ car.brand }} {{ car.model }}</div>
-      
+      <div class="vehicle-name-wrapper">
+        <div class="vehicle-name" data-brand="{{ car.brand }}" data-model="{{ car.model }}">
+          {{ car.brand }} {{ car.model }}
+        </div>
+      </div>
       <div class="content-container">
         <div class="left-column">
           <div class="tech-data-title">Technische Daten:</div>
@@ -343,7 +363,6 @@
             <img src="{{ url_for('static', filename='images/santander.png') }}" alt="Santander Consumer Bank">
           </div>
         </div>
-        
         <div class="right-column">
           <div class="features-title">Sonderausstattung:</div>
           <ul class="features-list">
@@ -353,37 +372,34 @@
           </ul>
         </div>
       </div>
-      
       <div class="warranty-badge">
         Bis 24 Monate Gebrauchtwagen-Garantie möglich.
       </div>
-      
       <div class="price-section">
         <div class="eco-section">
           <div class="eco-label">Umweltplakette</div>
-          <div class="eco-badge">
-            <svg viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="{{ eco_badge_color }}" stroke="{{ eco_badge_stroke }}" stroke-width="2"/>
-              <text x="50" y="62" text-anchor="middle" fill="white" font-size="36" font-weight="bold">{{ car.eco_badge }}</text>
-            </svg>
-          </div>
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="{{ eco_badge_color }}" stroke="{{ eco_badge_stroke }}" stroke-width="2"/>
+            <text x="50" y="65" text-anchor="middle" fill="white" font-size="40" font-weight="bold">{{ car.eco_badge }}</text>
+          </svg>
         </div>
         <div class="price-box">
           <div class="price-title">Unser Angebot:</div>
           <div class="price">{{ car.price|numberformat }},- €</div>
           <div class="price-info">
-            {% if car.vat_deductible %}MwSt. ausweisbar<br>{% endif %}
+            {% if car.vat_deductible %}
+            MwSt. ausweisbar<br>
+            {% endif %}
             Alle Angaben ohne Gewähr!
           </div>
         </div>
       </div>
-      
       <div class="footer">
         <div class="footer-row">
           <div class="footer-col">
-            <strong>Auto Berndl</strong><br>
+            Auto Berndl<br>
             66978 Donsieders<br>
-            Biebermühle 5
+            Biebermühle 5<br>
           </div>
           <div class="footer-col">
             {% if seller == 'Im Auftrag' %}
@@ -400,7 +416,7 @@
           <div class="footer-col">
             www.autoberndl.de<br>
             Info@autoberndl.de<br>
-            Tel: 06334-9227-0
+            Telefon 06334-9227-0
           </div>
         </div>
       </div>
