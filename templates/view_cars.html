@@ -403,7 +403,7 @@
                             <span class="badge bg-secondary badge-vat">Nein</span>
                         {% endif %}
                     </td>
-                    <td>{{ car.created_at.strftime('%d.%m.%Y') }}</td>
+                    <td>{{ car.created_at.strftime('%d.%m.%Y') if car.created_at else '-' }}</td>
                     <td class="action-column">
                         <div class="action-buttons">
                             <button class="btn btn-outline-primary btn-sm edit-car" 
