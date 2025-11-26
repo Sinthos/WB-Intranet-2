@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aufnahmeblatt - {{ intake.brand }} {{ intake.model_variant }}</title>
+    <style>
+        @page { size: A4; margin: 10mm; }
+        @media print {
+            html, body { width: 210mm; height: 297mm; }
+            body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; line-height: 1.3; color: #333; background: white; }
+        .page { width: 190mm; min-height: 277mm; margin: 0 auto; padding: 5mm; position: relative; }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0d6efd; padding-bottom: 8px; margin-bottom: 10px; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .logo { font-size: 16pt; font-weight: bold; color: #0d6efd; }
+        .header-right { text-align: right; font-size: 8pt; color: #666; }
+        .doc-title { font-size: 10pt; font-weight: bold; color: #333; }
+        .internal-nr { background: #f0f0f0; padding: 3px 8px; border-radius: 4px; font-family: monospace; }
+        
+        /* Vehicle Title */
+        .vehicle-title { text-align: center; font-size: 18pt; font-weight: bold; margin: 15px 0; padding: 10px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; }
+        
+        /* Sections */
+        .section { margin-bottom: 10px; }
+        .section-title { font-size: 9pt; font-weight: bold; color: #0d6efd; border-bottom: 1px solid #dee2e6; padding-bottom: 3px; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+        .section-icon { width: 14px; height: 14px; }
+        
+        /* Grid Layout */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        
+        /* Data Items */
+        .data-row { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px dotted #eee; }
+        .data-label { color: #666; font-size: 8pt; }
+        .data-value { font-weight: 500; text-align: right; }
+        
+        /* Tags */
+        .tags { display: flex; flex-wrap: wrap; gap: 3px; }
+        .tag { background: #e7f1ff; color: #0d6efd; padding: 2px 6px; border-radius: 3px; font-size: 7pt; }
+        .tag-green { background: #d4edda; color: #155724; }
+        .tag-yellow { background: #fff3cd; color: #856404; }
+        
+        /* Price Box */
+        .price-box { background: linear-gradient(135deg, #198754 0%, #157347 100%); color: white; padding: 12px; border-radius: 8px; text-align: center; margin: 10px 0; }
+        .price-amount { font-size: 24pt; font-weight: bold; }
+        .price-info { font-size: 8pt; opacity: 0.9; margin-top: 3px; }
+        
+        /* Eco Badge */
+        .eco-badge { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 50%; color: white; font-size: 20pt; font-weight: bold; }
+        .eco-green { background: #22c55e; }
+        .eco-yellow { background: #eab308; }
+        .eco-red { background: #ef4444; }
+        
+        /* Condition Indicators */
+        .condition-item { display: flex; align-items: center; gap: 5px; padding: 3px 0; }
+        .condition-check { color: #198754; }
+        .condition-x { color: #dc3545; }
+        
+        /* Footer */
+        .footer { position: absolute; bottom: 5mm; left: 5mm; right: 5mm; border-top: 1px solid #dee2e6; padding-top: 8px; display: flex; justify-content: space-between; font-size: 7pt; color: #666; }
+        .footer-col { flex: 1; }
+        .footer-center { text-align: center; }
+        .footer-right { text-align: right; }
+        
+        /* Notes */
+        .notes-box { background: #fff9e6; border: 1px solid #ffc107; border-radius: 6px; padding: 8px; margin-top: 10px; }
+        .notes-title { font-weight: bold; color: #856404; margin-bottom: 4px; font-size: 8pt; }
+        .notes-content { font-size: 8pt; white-space: pre-wrap; }
+        
+        /* Print Button */
+        .print-btn { position: fixed; top: 20px; right: 20px; background: #0d6efd; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; }
+        .print-btn:hover { background: #0b5ed7; }
+        
+        /* Hide empty sections */
+        .section:empty { display: none; }
+        .section-empty { display: none; }
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">🖨️ Drucken</button>
+    
+    <div class="page">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <span class="logo">🚗 Auto Berndl</span>
+                <span class="doc-title">Fahrzeug-Aufnahmeblatt</span>
+            </div>
+            <div class="header-right">
+                {% if intake.internal_number %}<span class="internal-nr">{{ intake.internal_number }}</span><br>{% endif %}
+                <span>Erstellt: {{ print_date }}</span>
+            </div>
+        </div>
+        
+        <!-- Vehicle Title -->
+        <div class="vehicle-title">{{ intake.brand }} {{ intake.model_variant }}</div>
+        
+        <div class="grid-2">
+            <!-- Left Column -->
+            <div>
+                <!-- Basisdaten -->
+                <div class="section">
+                    <div class="section-title">📋 Basisdaten</div>
+                    {% if intake.first_registration %}<div class="data-row"><span class="data-label">Erstzulassung</span><span class="data-value">{{ intake.first_registration }}</span></div>{% endif %}
+                    {% if intake.vin %}<div class="data-row"><span class="data-label">FIN</span><span class="data-value">{{ intake.vin }}</span></div>{% endif %}
+                    {% if intake.mileage %}<div class="data-row"><span class="data-label">Kilometerstand</span><span class="data-value">{{ "{:,.0f}".format(intake.mileage).replace(",", ".") }} km</span></div>{% endif %}
+                    {% if intake.num_owners %}<div class="data-row"><span class="data-label">Halter</span><span class="data-value">{{ intake.num_owners }}</span></div>{% endif %}
+                    {% if intake.hu_au_until %}<div class="data-row"><span class="data-label">HU/AU bis</span><span class="data-value">{{ intake.hu_au_until }}</span></div>{% endif %}
+                    {% if intake.service_book %}<div class="data-row"><span class="data-label">Scheckheft</span><span class="data-value">{{ intake.service_book }}</span></div>{% endif %}
+                    {% if intake.accident_damage %}<div class="data-row"><span class="data-label">Unfallschaden</span><span class="data-value">{{ intake.accident_damage }}</span></div>{% endif %}
+                </div>
+                
+                <!-- Motor & Antrieb -->
+                <div class="section">
+                    <div class="section-title">⚡ Motor & Antrieb</div>
+                    {% if intake.fuel_types and intake.fuel_types|length > 0 %}<div class="data-row"><span class="data-label">Kraftstoff</span><span class="data-value">{{ intake.fuel_types|join(', ') }}</span></div>{% endif %}
+                    {% if intake.power_ps %}<div class="data-row"><span class="data-label">Leistung</span><span class="data-value">{{ intake.power_ps }} PS ({{ intake.power_kw }} kW)</span></div>{% endif %}
+                    {% if intake.engine_capacity %}<div class="data-row"><span class="data-label">Hubraum</span><span class="data-value">{{ "{:,.0f}".format(intake.engine_capacity).replace(",", ".") }} cm³</span></div>{% endif %}
+                    {% if intake.cylinders %}<div class="data-row"><span class="data-label">Zylinder</span><span class="data-value">{{ intake.cylinders }}</span></div>{% endif %}
+                    {% if intake.transmission %}<div class="data-row"><span class="data-label">Getriebe</span><span class="data-value">{{ intake.transmission }}{% if intake.gears %} ({{ intake.gears }}-Gang){% endif %}</span></div>{% endif %}
+                    {% if intake.drive_type %}<div class="data-row"><span class="data-label">Antrieb</span><span class="data-value">{{ intake.drive_type }}</span></div>{% endif %}
+                    {% if intake.fuel_consumption %}<div class="data-row"><span class="data-label">Verbrauch</span><span class="data-value">{{ intake.fuel_consumption }} l/100km</span></div>{% endif %}
+                    {% if intake.co2_emission %}<div class="data-row"><span class="data-label">CO₂</span><span class="data-value">{{ intake.co2_emission }} g/km</span></div>{% endif %}
+                </div>
+                
+                <!-- Umwelt -->
+                {% if intake.emission_class or intake.eco_badge %}
+                <div class="section">
+                    <div class="section-title">🌿 Umwelt</div>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        {% if intake.eco_badge %}
+                        <div class="eco-badge eco-{{ intake.eco_badge }}">
+                            {% if intake.eco_badge == 'grün' %}4{% elif intake.eco_badge == 'gelb' %}3{% else %}2{% endif %}
+                        </div>
+                        {% endif %}
+                        <div>
+                            {% if intake.emission_class %}<div class="data-row"><span class="data-label">Schadstoffklasse</span><span class="data-value">{{ intake.emission_class }}</span></div>{% endif %}
+                            {% if intake.euro_norm %}<div class="data-row"><span class="data-label">Euronorm</span><span class="data-value">{{ intake.euro_norm }}</span></div>{% endif %}
+                            {% if intake.particle_filter %}<div class="condition-item"><span class="condition-check">✓</span> Partikelfilter</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Farbe -->
+                {% if intake.exterior_color or intake.interior_color %}
+                <div class="section">
+                    <div class="section-title">🎨 Farben</div>
+                    {% if intake.exterior_color %}<div class="data-row"><span class="data-label">Außen</span><span class="data-value">{{ intake.exterior_color }}{% if intake.color_metallic %} (Metallic){% endif %}{% if intake.color_matte %} (Matt){% endif %}</span></div>{% endif %}
+                    {% if intake.color_wrapped %}<div class="data-row"><span class="data-label">Folierung</span><span class="data-value">{{ intake.color_wrapped }}</span></div>{% endif %}
+                    {% if intake.interior_color %}<div class="data-row"><span class="data-label">Innen</span><span class="data-value">{{ intake.interior_color }}</span></div>{% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Gewichte -->
+                {% if intake.curb_weight or intake.trailer_load_braked %}
+                <div class="section">
+                    <div class="section-title">⚖️ Gewichte</div>
+                    {% if intake.curb_weight %}<div class="data-row"><span class="data-label">Leergewicht</span><span class="data-value">{{ "{:,.0f}".format(intake.curb_weight).replace(",", ".") }} kg</span></div>{% endif %}
+                    {% if intake.gross_weight %}<div class="data-row"><span class="data-label">Gesamtgewicht</span><span class="data-value">{{ "{:,.0f}".format(intake.gross_weight).replace(",", ".") }} kg</span></div>{% endif %}
+                    {% if intake.trailer_load_braked %}<div class="data-row"><span class="data-label">Anhängelast gebr.</span><span class="data-value">{{ "{:,.0f}".format(intake.trailer_load_braked).replace(",", ".") }} kg</span></div>{% endif %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Right Column -->
+            <div>
+                <!-- Preis -->
+                {% if intake.gross_price %}
+                <div class="price-box">
+                    <div class="price-amount">{{ "{:,.0f}".format(intake.gross_price).replace(",", ".") }} €</div>
+                    <div class="price-info">
+                        {% if intake.vat_deductible %}MwSt. ausweisbar{% endif %}
+                        {% if intake.net_price %} | Netto: {{ "{:,.0f}".format(intake.net_price).replace(",", ".") }} €{% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Ausstattung -->
+                {% set all_features = (intake.exterior_features or []) + (intake.comfort_features or []) + (intake.infotainment_features or []) + (intake.safety_features or []) + (intake.interior_materials or []) %}
+                {% if all_features|length > 0 %}
+                <div class="section">
+                    <div class="section-title">✨ Ausstattung</div>
+                    <div class="tags">
+                        {% for feature in all_features %}
+                        <span class="tag">{{ feature }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Airbags & Parken -->
+                {% if intake.airbags and intake.airbags|length > 0 %}
+                <div class="section">
+                    <div class="section-title">🎈 Airbags</div>
+                    <div class="tags">
+                        {% for ab in intake.airbags %}<span class="tag tag-green">{{ ab }}</span>{% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Klima -->
+                {% if intake.climate_type %}
+                <div class="section">
+                    <div class="section-title">❄️ Klima</div>
+                    <div class="data-row"><span class="data-label">Klimaanlage</span><span class="data-value">{{ intake.climate_type }}</span></div>
+                </div>
+                {% endif %}
+                
+                <!-- Zustand -->
+                <div class="section">
+                    <div class="section-title">🔧 Zustand & Service</div>
+                    {% if intake.last_inspection_date %}<div class="data-row"><span class="data-label">Letzte Inspektion</span><span class="data-value">{{ intake.last_inspection_date }}{% if intake.last_inspection_km %} ({{ "{:,.0f}".format(intake.last_inspection_km).replace(",", ".") }} km){% endif %}</span></div>{% endif %}
+                    {% if intake.num_keys %}<div class="data-row"><span class="data-label">Schlüssel</span><span class="data-value">{{ intake.num_keys }}</span></div>{% endif %}
+                    {% if intake.tire_tread_front or intake.tire_tread_rear %}<div class="data-row"><span class="data-label">Reifenprofil</span><span class="data-value">V: {{ intake.tire_tread_front or '-' }}mm / H: {{ intake.tire_tread_rear or '-' }}mm</span></div>{% endif %}
+                    {% if intake.warranty_type and intake.warranty_type != 'Keine' %}<div class="data-row"><span class="data-label">Garantie</span><span class="data-value">{{ intake.warranty_type }}</span></div>{% endif %}
+                    
+                    <div style="margin-top: 6px;">
+                        {% if intake.oil_change_new %}<span class="tag tag-green">✓ Öl neu</span>{% endif %}
+                        {% if intake.brakes_new %}<span class="tag tag-green">✓ Bremsen neu</span>{% endif %}
+                        {% if intake.timing_belt_new %}<span class="tag tag-green">✓ Zahnriemen neu</span>{% endif %}
+                        {% if intake.replacement_engine %}<span class="tag tag-yellow">AT-Motor{% if intake.replacement_engine_km %} ({{ "{:,.0f}".format(intake.replacement_engine_km).replace(",", ".") }} km){% endif %}</span>{% endif %}
+                        {% if intake.replacement_transmission %}<span class="tag tag-yellow">AT-Getriebe{% if intake.replacement_transmission_km %} ({{ "{:,.0f}".format(intake.replacement_transmission_km).replace(",", ".") }} km){% endif %}</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Zusätzliche Hinweise -->
+        {% if intake.additional_notes %}
+        <div class="notes-box">
+            <div class="notes-title">📝 Zusätzliche Hinweise</div>
+            <div class="notes-content">{{ intake.additional_notes }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-col">
+                <strong>Auto Berndl</strong><br>
+                66978 Donsieders<br>
+                Biebermühle 5
+            </div>
+            <div class="footer-col footer-center">
+                <strong>Kontakt</strong><br>
+                Tel: 06334-9227-0<br>
+                info@autoberndl.de
+            </div>
+            <div class="footer-col footer-right">
+                <strong>www.autoberndl.de</strong><br>
+                Alle Angaben ohne Gewähr<br>
+                {{ print_date }}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

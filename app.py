@@ -4,8 +4,8 @@ import os
 import subprocess
 import shutil
 from datetime import datetime
-from models import db, Car
-from routes import car_routes, view_routes
+from models import db, Car, VehicleIntake
+from routes import car_routes, view_routes, intake_routes
 from version_utils import get_full_version_info, check_for_updates, get_changelog
 
 app = Flask(__name__)
@@ -27,6 +27,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Register blueprints
 app.register_blueprint(car_routes.bp)
 app.register_blueprint(view_routes.bp)
+app.register_blueprint(intake_routes.bp)
 
 # Initialize DB
 db.init_app(app)
@@ -88,8 +89,8 @@ def home():
 
 @app.route('/intake-form')
 def intake_form():
-    """Aufnahmeblatt Route"""
-    return render_template('intake_form.html')
+    """Aufnahmeblatt Route - Weiterleitung zum Wizard"""
+    return render_template('intake_form.html', intake=None, mode='new')
 
 
 # ============== API-Endpunkte für Versionierung ==============

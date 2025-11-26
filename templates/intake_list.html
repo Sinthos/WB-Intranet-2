@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Auto Berndl - Aufnahmeblätter{% endblock %}
+
+{% block extra_css %}
+<style>
+.intake-card{transition:all .2s ease;cursor:pointer}.intake-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.15)}.intake-header{display:flex;justify-content:space-between;align-items:flex-start}.intake-title{font-weight:600;font-size:1.1rem;margin-bottom:.25rem}.intake-subtitle{color:var(--bs-secondary-color);font-size:.85rem}.intake-meta{display:flex;gap:1rem;margin-top:.75rem;font-size:.85rem;color:var(--bs-secondary-color)}.intake-meta i{margin-right:.25rem}.intake-price{font-size:1.25rem;font-weight:700;color:#198754}.intake-actions{display:flex;gap:.5rem}.search-box{max-width:400px}.empty-state{text-align:center;padding:3rem;color:var(--bs-secondary-color)}.empty-state i{font-size:4rem;margin-bottom:1rem;opacity:.5}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1"><i class="bi bi-clipboard-data text-primary me-2"></i>Aufnahmeblätter</h1>
+            <p class="text-muted mb-0">Übersicht aller erfassten Fahrzeuge</p>
+        </div>
+        <a href="{{ url_for('intake_form') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Neues Aufnahmeblatt</a>
+    </div>
+    
+    <!-- Search & Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-6">
+                    <div class="input-group search-box">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Suche nach Marke, Modell, FIN...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="sortSelect">
+                        <option value="created_at-desc">Neueste zuerst</option>
+                        <option value="created_at-asc">Älteste zuerst</option>
+                        <option value="brand-asc">Marke A-Z</option>
+                        <option value="gross_price-desc">Preis absteigend</option>
+                        <option value="gross_price-asc">Preis aufsteigend</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <span class="text-muted" id="resultCount">Laden...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results -->
+    <div id="intakeList" class="row g-3">
+        <!-- Wird per JavaScript gefüllt -->
+    </div>
+    
+    <!-- Pagination -->
+    <nav id="pagination" class="mt-4" style="display:none;">
+        <ul class="pagination justify-content-center"></ul>
+    </nav>
+    
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display:none;">
+        <i class="bi bi-clipboard-x"></i>
+        <h4>Keine Aufnahmeblätter gefunden</h4>
+        <p>Erstellen Sie Ihr erstes Aufnahmeblatt, um Fahrzeugdaten zu erfassen.</p>
+        <a href="{{ url_for('intake_form') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Neues Aufnahmeblatt</a>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Aufnahmeblatt löschen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Möchten Sie das Aufnahmeblatt für <strong id="deleteVehicleName"></strong> wirklich löschen?</p>
+                <p class="text-danger"><small>Diese Aktion kann nicht rückgängig gemacht werden.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete"><i class="bi bi-trash me-2"></i>Löschen</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+let deleteId = null;
+const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadIntakes();
+    
+    document.getElementById('searchInput').addEventListener('input', debounce(loadIntakes, 300));
+    document.getElementById('sortSelect').addEventListener('change', loadIntakes);
+    document.getElementById('confirmDelete').addEventListener('click', confirmDelete);
+});
+
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+async function loadIntakes(page = 1) {
+    currentPage = page;
+    const search = document.getElementById('searchInput').value;
+    const [sortBy, sortOrder] = document.getElementById('sortSelect').value.split('-');
+    
+    try {
+        const params = new URLSearchParams({
+            page,
+            per_page: 12,
+            sort_by: sortBy,
+            sort_order: sortOrder,
+            search
+        });
+        
+        const res = await fetch(`/api/intakes?${params}`);
+        const data = await res.json();
+        
+        renderIntakes(data.items);
+        renderPagination(data);
+        document.getElementById('resultCount').textContent = `${data.total} Fahrzeug${data.total !== 1 ? 'e' : ''}`;
+        
+        document.getElementById('emptyState').style.display = data.total === 0 ? 'block' : 'none';
+        document.getElementById('intakeList').style.display = data.total === 0 ? 'none' : 'flex';
+        
+    } catch (e) {
+        showToast('Fehler beim Laden', 'error');
+    }
+}
+
+function renderIntakes(items) {
+    const container = document.getElementById('intakeList');
+    container.innerHTML = items.map(item => `
+        <div class="col-md-6 col-lg-4">
+            <div class="card intake-card h-100" onclick="window.location='/intake/${item.id}/edit'">
+                <div class="card-body">
+                    <div class="intake-header">
+                        <div>
+                            <div class="intake-title">${item.brand} ${item.model_variant}</div>
+                            <div class="intake-subtitle">${item.internal_number || 'Keine Nr.'}</div>
+                        </div>
+                        ${item.gross_price ? `<div class="intake-price">${parseFloat(item.gross_price).toLocaleString('de-DE')} €</div>` : ''}
+                    </div>
+                    <div class="intake-meta">
+                        ${item.first_registration ? `<span><i class="bi bi-calendar"></i>${item.first_registration}</span>` : ''}
+                        ${item.mileage ? `<span><i class="bi bi-speedometer2"></i>${item.mileage.toLocaleString('de-DE')} km</span>` : ''}
+                        ${item.power_ps ? `<span><i class="bi bi-lightning"></i>${item.power_ps} PS</span>` : ''}
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-top-0">
+                    <div class="intake-actions" onclick="event.stopPropagation()">
+                        <a href="/intake/${item.id}/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                        <a href="/intake/${item.id}/view" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-printer"></i></a>
+                        <button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal(${item.id}, '${item.brand} ${item.model_variant}')"><i class="bi bi-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderPagination(data) {
+    const nav = document.getElementById('pagination');
+    const ul = nav.querySelector('ul');
+    
+    if (data.pages <= 1) {
+        nav.style.display = 'none';
+        return;
+    }
+    
+    nav.style.display = 'block';
+    let html = '';
+    
+    html += `<li class="page-item ${!data.has_prev ? 'disabled' : ''}"><a class="page-link" href="#" onclick="loadIntakes(${currentPage - 1}); return false;">«</a></li>`;
+    
+    for (let i = 1; i <= data.pages; i++) {
+        if (i === 1 || i === data.pages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+            html += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="loadIntakes(${i}); return false;">${i}</a></li>`;
+        } else if (i === currentPage - 3 || i === currentPage + 3) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+    
+    html += `<li class="page-item ${!data.has_next ? 'disabled' : ''}"><a class="page-link" href="#" onclick="loadIntakes(${currentPage + 1}); return false;">»</a></li>`;
+    
+    ul.innerHTML = html;
+}
+
+function showDeleteModal(id, name) {
+    deleteId = id;
+    document.getElementById('deleteVehicleName').textContent = name;
+    deleteModal.show();
+}
+
+async function confirmDelete() {
+    if (!deleteId) return;
+    
+    try {
+        const res = await fetch(`/api/intake/${deleteId}`, { method: 'DELETE' });
+        const data = await res.json();
+        
+        if (data.success) {
+            showToast('Erfolgreich gelöscht', 'success');
+            deleteModal.hide();
+            loadIntakes(currentPage);
+        } else {
+            showToast(data.error || 'Fehler beim Löschen', 'error');
+        }
+    } catch (e) {
+        showToast('Fehler beim Löschen', 'error');
+    }
+    
+    deleteId = null;
+}
+</script>
+{% endblock %}

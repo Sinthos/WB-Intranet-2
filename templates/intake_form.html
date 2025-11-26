@@ -1,15 +1,489 @@
-<!-- templates/intake_form.html -->
 {% extends "base.html" %}
-
 {% block title %}Auto Berndl - Aufnahmeblatt{% endblock %}
 
+{% block extra_css %}
+<style>
+.wizard-container{max-width:1200px;margin:0 auto}.wizard-progress{display:flex;justify-content:space-between;margin-bottom:2rem;padding:0;list-style:none;position:relative;overflow-x:auto}.wizard-progress::before{content:'';position:absolute;top:20px;left:0;right:0;height:3px;background:var(--bs-border-color);z-index:0}.wizard-step{display:flex;flex-direction:column;align-items:center;position:relative;z-index:1;flex:1;min-width:70px;cursor:pointer}.step-number{width:40px;height:40px;border-radius:50%;background:var(--bs-secondary-bg);border:3px solid var(--bs-border-color);display:flex;align-items:center;justify-content:center;font-weight:600;margin-bottom:.5rem}.step-label{font-size:.7rem;text-align:center;color:var(--bs-secondary-color)}.wizard-step.active .step-number{background:#0d6efd;border-color:#0d6efd;color:#fff}.wizard-step.completed .step-number{background:#198754;border-color:#198754;color:#fff}.wizard-content{background:var(--card-bg);border-radius:12px;padding:2rem;box-shadow:0 2px 8px rgba(0,0,0,.08);min-height:400px}.step-panel{display:none}.step-panel.active{display:block}.step-title{font-size:1.5rem;font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:.75rem}.step-title i{color:#0d6efd}.step-description{color:var(--bs-secondary-color);margin-bottom:1.5rem}.form-section{margin-bottom:1.5rem}.form-section-title{font-weight:600;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid var(--bs-border-color);display:flex;align-items:center;gap:.5rem}.checkbox-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}.checkbox-item{display:flex;align-items:center;padding:.5rem .75rem;background:var(--bs-secondary-bg);border-radius:6px;cursor:pointer;border:1px solid transparent}.checkbox-item:hover{background:rgba(13,110,253,.1)}.checkbox-item input{margin-right:.5rem}.checkbox-item.checked{background:rgba(13,110,253,.15);border-color:rgba(13,110,253,.3)}.wizard-navigation{display:flex;justify-content:space-between;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--bs-border-color)}.btn-wizard{min-width:140px;padding:.75rem 1.5rem;font-weight:500}.input-with-unit{position:relative}.input-with-unit input{padding-right:50px}.input-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--bs-secondary-color);font-size:.85rem}.summary-section{background:var(--bs-secondary-bg);border-radius:8px;padding:1rem;margin-bottom:1rem}.summary-item{display:flex;justify-content:space-between;padding:.25rem 0;font-size:.9rem}.summary-tags{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.5rem}.summary-tag{background:rgba(13,110,253,.1);color:#0d6efd;padding:.2rem .5rem;border-radius:4px;font-size:.75rem}.auto-calc{font-size:.75rem;color:var(--bs-secondary-color);margin-top:.25rem}@media(max-width:768px){.wizard-step{min-width:50px}.checkbox-grid{grid-template-columns:1fr}.wizard-content{padding:1rem}}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">Aufnahmeblatt</h1>
-        <div class="alert alert-info">
-            Diese Funktion wird in Kürze verfügbar sein.
+<div class="wizard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1"><i class="bi bi-clipboard-plus text-primary me-2"></i>{% if mode == 'edit' %}Aufnahmeblatt bearbeiten{% else %}Neues Aufnahmeblatt{% endif %}</h1>
+            <p class="text-muted mb-0">Erfassen Sie alle Fahrzeugdaten Schritt für Schritt</p>
         </div>
+        <a href="{{ url_for('intake.list_intakes_view') }}" class="btn btn-outline-secondary"><i class="bi bi-list-ul me-1"></i>Übersicht</a>
     </div>
+    
+    <ul class="wizard-progress" id="wizardProgress">
+        <li class="wizard-step active" data-step="1"><div class="step-number">A</div><span class="step-label">Basis</span></li>
+        <li class="wizard-step" data-step="2"><div class="step-number">B</div><span class="step-label">Motor</span></li>
+        <li class="wizard-step" data-step="3"><div class="step-number">C</div><span class="step-label">Umwelt</span></li>
+        <li class="wizard-step" data-step="4"><div class="step-number">D</div><span class="step-label">Maße</span></li>
+        <li class="wizard-step" data-step="5"><div class="step-number">E</div><span class="step-label">Exterieur</span></li>
+        <li class="wizard-step" data-step="6"><div class="step-number">F</div><span class="step-label">Interieur</span></li>
+        <li class="wizard-step" data-step="7"><div class="step-number">G</div><span class="step-label">Media</span></li>
+        <li class="wizard-step" data-step="8"><div class="step-number">H</div><span class="step-label">Sicherheit</span></li>
+        <li class="wizard-step" data-step="9"><div class="step-number">I</div><span class="step-label">Klima</span></li>
+        <li class="wizard-step" data-step="10"><div class="step-number">K</div><span class="step-label">Zustand</span></li>
+        <li class="wizard-step" data-step="11"><div class="step-number">L</div><span class="step-label">Preise</span></li>
+        <li class="wizard-step" data-step="12"><div class="step-number">✓</div><span class="step-label">Fertig</span></li>
+    </ul>
+    
+    <form id="intakeForm" novalidate>
+        <input type="hidden" name="id" value="{{ intake.id if intake else '' }}">
+        <div class="wizard-content">
+            <!-- Step 1: Basisdaten -->
+            <div class="step-panel active" data-step="1">
+                <h4 class="step-title"><i class="bi bi-car-front"></i> A. Basisdaten</h4>
+                <p class="step-description">Grundlegende Fahrzeuginformationen</p>
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label">Marke <span class="text-danger">*</span></label><input type="text" class="form-control" name="brand" required placeholder="z.B. BMW" list="brandList"><datalist id="brandList"><option value="Audi"><option value="BMW"><option value="Mercedes-Benz"><option value="Volkswagen"><option value="Porsche"><option value="Opel"><option value="Ford"><option value="Skoda"><option value="Seat"><option value="Toyota"><option value="Honda"><option value="Mazda"><option value="Hyundai"><option value="Kia"><option value="Volvo"><option value="Renault"><option value="Peugeot"><option value="Fiat"><option value="Tesla"></datalist></div>
+                    <div class="col-md-6"><label class="form-label">Modell/Variante <span class="text-danger">*</span></label><input type="text" class="form-control" name="model_variant" required placeholder="z.B. M340i Touring"></div>
+                    <div class="col-md-4"><label class="form-label">Erstzulassung</label><input type="month" class="form-control" name="first_registration"></div>
+                    <div class="col-md-4"><label class="form-label">FIN</label><input type="text" class="form-control" name="vin" maxlength="17" placeholder="17-stellig"></div>
+                    <div class="col-md-4"><label class="form-label">Interne Nr.</label><div class="input-group"><input type="text" class="form-control" name="internal_number" id="internalNumber"><button type="button" class="btn btn-outline-secondary" id="generateNumber"><i class="bi bi-magic"></i></button></div></div>
+                    <div class="col-md-4"><label class="form-label">Kilometerstand</label><div class="input-with-unit"><input type="number" class="form-control" name="mileage" min="0"><span class="input-unit">km</span></div></div>
+                    <div class="col-md-4"><label class="form-label">Halter</label><input type="number" class="form-control" name="num_owners" min="1" max="20"></div>
+                    <div class="col-md-4"><label class="form-label">HU/AU bis</label><input type="month" class="form-control" name="hu_au_until"></div>
+                    <div class="col-md-6"><label class="form-label">Scheckheft</label><select class="form-select" name="service_book"><option value="">--</option><option value="ja">Ja</option><option value="nein">Nein</option><option value="digital">Digital</option><option value="teilweise">Teilweise</option></select></div>
+                    <div class="col-md-6"><label class="form-label">Unfallschaden</label><select class="form-select" name="accident_damage"><option value="">--</option><option value="nein">Nein</option><option value="leichter Schaden">Leichter Schaden</option><option value="repariert">Repariert</option></select></div>
+                </div>
+            </div>
+            
+            <!-- Step 2: Motor -->
+            <div class="step-panel" data-step="2">
+                <h4 class="step-title"><i class="bi bi-speedometer2"></i> B. Motor & Antrieb</h4>
+                <p class="step-description">Motorisierung und Antriebsart</p>
+                <div class="form-section"><h6 class="form-section-title"><i class="bi bi-fuel-pump"></i> Treibstoff</h6><div class="checkbox-grid" id="fuelTypeGrid"></div></div>
+                <div class="form-section"><h6 class="form-section-title"><i class="bi bi-lightning-charge"></i> Leistung</h6>
+                    <div class="row g-3">
+                        <div class="col-md-3"><label class="form-label">PS</label><input type="number" class="form-control" name="power_ps" id="powerPs"><div class="auto-calc"><i class="bi bi-arrow-repeat"></i> kW auto</div></div>
+                        <div class="col-md-3"><label class="form-label">kW</label><input type="number" class="form-control" name="power_kw" id="powerKw" readonly></div>
+                        <div class="col-md-3"><label class="form-label">Hubraum</label><div class="input-with-unit"><input type="number" class="form-control" name="engine_capacity"><span class="input-unit">cm³</span></div></div>
+                        <div class="col-md-3"><label class="form-label">Zylinder</label><input type="number" class="form-control" name="cylinders" max="16"></div>
+                        <div class="col-md-4"><label class="form-label">Tank</label><div class="input-with-unit"><input type="number" class="form-control" name="tank_size" step="0.1"><span class="input-unit">L</span></div></div>
+                        <div class="col-md-4"><label class="form-label">Verbrauch</label><div class="input-with-unit"><input type="number" class="form-control" name="fuel_consumption" step="0.1"><span class="input-unit">l/100km</span></div></div>
+                        <div class="col-md-4"><label class="form-label">CO₂</label><div class="input-with-unit"><input type="number" class="form-control" name="co2_emission"><span class="input-unit">g/km</span></div></div>
+                    </div>
+                </div>
+                <div class="form-section"><h6 class="form-section-title"><i class="bi bi-gear-wide-connected"></i> Antrieb</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4"><label class="form-label">Antrieb</label><select class="form-select" name="drive_type"><option value="">--</option><option value="Front">Front</option><option value="Heck">Heck</option><option value="Allrad">Allrad</option></select></div>
+                        <div class="col-md-4"><label class="form-label">Getriebe</label><select class="form-select" name="transmission"><option value="">--</option><option value="Automatik">Automatik</option><option value="Schaltgetriebe">Schaltung</option></select></div>
+                        <div class="col-md-4"><label class="form-label">Gänge</label><input type="number" class="form-control" name="gears" min="1" max="10"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 3: Umwelt -->
+            <div class="step-panel" data-step="3">
+                <h4 class="step-title"><i class="bi bi-leaf"></i> C. Umwelt</h4>
+                <p class="step-description">Schadstoffklasse und Umweltdaten</p>
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label">Schadstoffklasse</label><select class="form-select" name="emission_class"><option value="">--</option><option value="Euro 4">Euro 4</option><option value="Euro 5">Euro 5</option><option value="Euro 6">Euro 6</option><option value="Euro 6d">Euro 6d</option><option value="Euro 6d-TEMP">Euro 6d-TEMP</option></select></div>
+                    <div class="col-md-6"><label class="form-label">Umweltplakette</label><select class="form-select" name="eco_badge"><option value="">--</option><option value="grün">Grün (4)</option><option value="gelb">Gelb (3)</option><option value="rot">Rot (2)</option></select></div>
+                    <div class="col-md-6"><label class="form-label">Euronorm</label><input type="text" class="form-control" name="euro_norm"></div>
+                    <div class="col-md-6"><div class="form-check mt-4"><input class="form-check-input" type="checkbox" name="particle_filter" id="particleFilter"><label class="form-check-label" for="particleFilter">Partikelfilter</label></div></div>
+                </div>
+            </div>
+            
+            <!-- Step 4: Maße -->
+            <div class="step-panel" data-step="4">
+                <h4 class="step-title"><i class="bi bi-rulers"></i> D. Maße & Gewichte</h4>
+                <p class="step-description">Gewichte und Anhängelasten</p>
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label">Leergewicht</label><div class="input-with-unit"><input type="number" class="form-control" name="curb_weight"><span class="input-unit">kg</span></div></div>
+                    <div class="col-md-6"><label class="form-label">Gesamtgewicht</label><div class="input-with-unit"><input type="number" class="form-control" name="gross_weight"><span class="input-unit">kg</span></div></div>
+                    <div class="col-md-4"><label class="form-label">Anhängelast gebremst</label><div class="input-with-unit"><input type="number" class="form-control" name="trailer_load_braked"><span class="input-unit">kg</span></div></div>
+                    <div class="col-md-4"><label class="form-label">Anhängelast ungebremst</label><div class="input-with-unit"><input type="number" class="form-control" name="trailer_load_unbraked"><span class="input-unit">kg</span></div></div>
+                    <div class="col-md-4"><label class="form-label">Stützlast</label><div class="input-with-unit"><input type="number" class="form-control" name="support_load"><span class="input-unit">kg</span></div></div>
+                </div>
+            </div>
+            
+            <!-- Step 5: Exterieur -->
+            <div class="step-panel" data-step="5">
+                <h4 class="step-title"><i class="bi bi-palette"></i> E. Exterieur</h4>
+                <p class="step-description">Farbe und äußere Ausstattung</p>
+                <div class="form-section"><h6 class="form-section-title"><i class="bi bi-paint-bucket"></i> Farbe</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Außenfarbe</label><select class="form-select" name="exterior_color"><option value="">--</option><option>Schwarz</option><option>Grau</option><option>Weiß</option><option>Silber</option><option>Blau</option><option>Rot</option><option>Grün</option><option>Braun</option><option>Andere</option></select></div>
+                        <div class="col-md-6"><label class="form-label">Folierung</label><input type="text" class="form-control" name="color_wrapped"></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="color_metallic" id="colorMetallic"><label class="form-check-label" for="colorMetallic">Metallic</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="color_matte" id="colorMatte"><label class="form-check-label" for="colorMatte">Matt</label></div></div>
+                    </div>
+                </div>
+                <div class="form-section"><h6 class="form-section-title"><i class="bi bi-car-front-fill"></i> Ausstattung</h6><div class="checkbox-grid" id="exteriorFeaturesGrid"></div></div>
+            </div>
+            
+            <!-- Step 6: Interieur -->
+            <div class="step-panel" data-step="6">
+                <h4 class="step-title"><i class="bi bi-person-workspace"></i> F. Innenraum</h4>
+                <p class="step-description">Innenausstattung und Komfort</p>
+                <div class="row g-3 mb-3"><div class="col-md-6"><label class="form-label">Innenfarbe</label><select class="form-select" name="interior_color"><option value="">--</option><option>Schwarz</option><option>Grau</option><option>Beige</option><option>Braun</option><option>Andere</option></select></div></div>
+                <div class="form-section"><h6 class="form-section-title"><i class="bi bi-vinyl"></i> Material</h6><div class="checkbox-grid" id="interiorMaterialsGrid"></div></div>
+                <div class="form-section"><h6 class="form-section-title"><i class="bi bi-stars"></i> Komfort</h6><div class="checkbox-grid" id="comfortFeaturesGrid"></div></div>
+            </div>
+            
+            <!-- Step 7: Infotainment -->
+            <div class="step-panel" data-step="7">
+                <h4 class="step-title"><i class="bi bi-display"></i> G. Infotainment</h4>
+                <p class="step-description">Multimedia und Konnektivität</p>
+                <div class="checkbox-grid" id="infotainmentFeaturesGrid"></div>
+            </div>
+            
+            <!-- Step 8: Sicherheit -->
+            <div class="step-panel" data-step="8">
+                <h4 class="step-title"><i class="bi bi-shield-check"></i> H. Sicherheit</h4>
+                <p class="step-description">Assistenzsysteme und Sicherheit</p>
+                <div class="form-section"><h6 class="form-section-title"><i class="bi bi-robot"></i> Assistenten</h6><div class="checkbox-grid" id="safetyFeaturesGrid"></div></div>
+                <div class="form-section"><h6 class="form-section-title"><i class="bi bi-balloon"></i> Airbags</h6><div class="checkbox-grid" id="airbagsGrid"></div></div>
+                <div class="form-section"><h6 class="form-section-title"><i class="bi bi-p-circle"></i> Parkhilfen</h6><div class="checkbox-grid" id="parkingFeaturesGrid"></div></div>
+            </div>
+            
+            <!-- Step 9: Klima -->
+            <div class="step-panel" data-step="9">
+                <h4 class="step-title"><i class="bi bi-thermometer-half"></i> I. Klima</h4>
+                <p class="step-description">Klimatisierung</p>
+                <div class="row g-3"><div class="col-md-6"><label class="form-label">Klimaanlage</label><select class="form-select" name="climate_type"><option value="">--</option><option>Keine</option><option>Klimaanlage manuell</option><option>Klimaautomatik</option><option>2-Zonen</option><option>3-Zonen</option><option>4-Zonen</option></select></div></div>
+            </div>
+            
+            <!-- Step 10: Zustand -->
+            <div class="step-panel" data-step="10">
+                <h4 class="step-title"><i class="bi bi-wrench-adjustable"></i> K. Zustand</h4>
+                <p class="step-description">Wartung und Service</p>
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="form-label">Letzte Inspektion</label><input type="date" class="form-control" name="last_inspection_date"></div>
+                    <div class="col-md-4"><label class="form-label">bei km</label><div class="input-with-unit"><input type="number" class="form-control" name="last_inspection_km"><span class="input-unit">km</span></div></div>
+                    <div class="col-md-4"><label class="form-label">Schlüssel</label><input type="number" class="form-control" name="num_keys" min="0" max="10"></div>
+                    <div class="col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="oil_change_new"><label class="form-check-label">Öl neu</label></div></div>
+                    <div class="col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="brakes_new"><label class="form-check-label">Bremsen neu</label></div></div>
+                    <div class="col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" name="timing_belt_new"><label class="form-check-label">Zahnriemen neu</label></div></div>
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6"><label class="form-label">Profil vorn</label><div class="input-with-unit"><input type="number" class="form-control" name="tire_tread_front" step="0.1"><span class="input-unit">mm</span></div></div>
+                    <div class="col-md-6"><label class="form-label">Profil hinten</label><div class="input-with-unit"><input type="number" class="form-control" name="tire_tread_rear" step="0.1"><span class="input-unit">mm</span></div></div>
+                    <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="replacement_engine"><label class="form-check-label">AT-Motor</label></div><input type="number" class="form-control mt-1" name="replacement_engine_km" placeholder="km-Stand"></div>
+                    <div class="col-md-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="replacement_transmission"><label class="form-check-label">AT-Getriebe</label></div><input type="number" class="form-control mt-1" name="replacement_transmission_km" placeholder="km-Stand"></div>
+                    <div class="col-md-6"><label class="form-label">Scheckheft gepflegt</label><select class="form-select" name="service_book_maintained"><option value="">--</option><option>ja</option><option>nein</option><option>digital</option></select></div>
+                    <div class="col-md-6"><label class="form-label">Garantie</label><select class="form-select" name="warranty_type"><option value="">--</option><option>Keine</option><option>Herstellergarantie</option><option>Gebrauchtwagengarantie</option><option>Verlängert</option></select></div>
+                </div>
+            </div>
+            
+            <!-- Step 11: Preise -->
+            <div class="step-panel" data-step="11">
+                <h4 class="step-title"><i class="bi bi-currency-euro"></i> L. Preise</h4>
+                <p class="step-description">Preisgestaltung</p>
+                <div class="row g-3">
+                    <div class="col-md-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="vat_deductible" id="vatDeductible"><label class="form-check-label" for="vatDeductible">MwSt. ausweisbar</label></div></div>
+                    <div class="col-md-6"><label class="form-label">Netto-Preis</label><div class="input-with-unit"><input type="number" class="form-control" name="net_price" id="netPrice" step="0.01"><span class="input-unit">€</span></div></div>
+                    <div class="col-md-6"><label class="form-label">Brutto-Preis</label><div class="input-with-unit"><input type="number" class="form-control" name="gross_price" id="grossPrice" step="0.01"><span class="input-unit">€</span></div><div class="auto-calc"><i class="bi bi-arrow-repeat"></i> Auto-Berechnung</div></div>
+                    <div class="col-md-6"><label class="form-label">Überführung</label><div class="input-with-unit"><input type="number" class="form-control" name="transfer_costs" step="0.01"><span class="input-unit">€</span></div></div>
+                    <div class="col-md-6"><label class="form-label">VK optional</label><div class="input-with-unit"><input type="number" class="form-control" name="optional_price" step="0.01"><span class="input-unit">€</span></div></div>
+                </div>
+            </div>
+            
+            <!-- Step 12: Zusammenfassung -->
+            <div class="step-panel" data-step="12">
+                <h4 class="step-title"><i class="bi bi-check-circle"></i> Zusammenfassung</h4>
+                <p class="step-description">Überprüfen und speichern</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="summary-section"><h6><i class="bi bi-car-front"></i> Fahrzeug</h6><div id="summaryBasic"></div></div>
+                        <div class="summary-section"><h6><i class="bi bi-speedometer2"></i> Motor</h6><div id="summaryMotor"></div></div>
+                        <div class="summary-section"><h6><i class="bi bi-currency-euro"></i> Preis</h6><div id="summaryPrice"></div></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="summary-section"><h6><i class="bi bi-list-check"></i> Ausstattung</h6><div id="summaryFeatures"></div></div>
+                        <div class="form-section"><h6 class="form-section-title"><i class="bi bi-chat-text"></i> Zusätzliche Hinweise</h6><textarea class="form-control" name="additional_notes" rows="5" placeholder="Mängel, Besonderheiten, Tuning, Zubehör..."></textarea></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="wizard-navigation">
+                <button type="button" class="btn btn-outline-secondary btn-wizard" id="prevBtn" disabled><i class="bi bi-arrow-left me-2"></i>Zurück</button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-wizard" id="saveBtn"><i class="bi bi-save me-2"></i>Speichern</button>
+                    <button type="button" class="btn btn-primary btn-wizard" id="nextBtn">Weiter<i class="bi bi-arrow-right ms-2"></i></button>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Optionen für Checkbox-Grids
+const OPTIONS = {
+    fuel_types: ['Benzin','Diesel','Elektro','Plug-in-Hybrid','Hybrid (Benzin/Elektro)','Wasserstoff','Autogas (LPG)','Erdgas (CNG)'],
+    exterior_features: ['Anhängerkupplung','Panorama-Dach','Schiebedach','Dachreling','Abgedunkelte Scheiben','Elektrische Heckklappe','Leichtmetallfelgen','LED-Scheinwerfer','Matrix LED','Xenon','Nebelscheinwerfer','Regensensor','Lichtsensor','Reifendruckkontrolle','Sommerreifen','Winterreifen','Allwetterreifen'],
+    interior_materials: ['Stoff','Teilleder','Vollleder','Kunstleder','Alcantara','Velours'],
+    comfort_features: ['Sportsitze','Sportpaket','Elektrische Sitze','Sitzheizung','Sitzheizung hinten','Sitzbelüftung','Massagesitze','Lordosenstütze','Armlehne','Ambiente-Beleuchtung'],
+    infotainment_features: ['Navigation','Touchscreen','Digitales Cockpit','Apple CarPlay','Android Auto','Bluetooth','USB','Induktives Laden','Radio DAB','Soundsystem','Freisprecheinrichtung','WLAN-Hotspot','Sprachsteuerung'],
+    safety_features: ['ABS','ESP','Traktionskontrolle','Notbremsassistent','Spurhalteassistent','Totwinkelassistent','Müdigkeitswarner','Abstandstempomat (ACC)','Tempomat','Verkehrszeichenerkennung','Nachtsichtassistent','Berganfahrassistent','Fernlichtassistent','Keyless-Go','Alarmanlage','Isofix'],
+    airbags: ['Fahrer','Front','Seiten','Kopf','Weitere'],
+    parking_features: ['Einparkhilfe vorne','Einparkhilfe hinten','Rückfahrkamera','360° Kamera','Selbstlenkend','Ausparkassistent']
+};
+
+let currentStep = 1;
+const totalSteps = 12;
+const form = document.getElementById('intakeForm');
+const existingData = {{ intake | tojson if intake else 'null' }};
+
+// Checkbox-Grid erstellen
+function createCheckboxGrid(containerId, options, fieldName) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = options.map(opt => `
+        <label class="checkbox-item">
+            <input type="checkbox" name="${fieldName}" value="${opt}">
+            <span>${opt}</span>
+        </label>
+    `).join('');
+    
+    container.querySelectorAll('.checkbox-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'INPUT') {
+                const cb = this.querySelector('input');
+                cb.checked = !cb.checked;
+            }
+            this.classList.toggle('checked', this.querySelector('input').checked);
+        });
+    });
+}
+
+// Initialisierung
+document.addEventListener('DOMContentLoaded', function() {
+    // Checkbox-Grids erstellen
+    createCheckboxGrid('fuelTypeGrid', OPTIONS.fuel_types, 'fuel_types');
+    createCheckboxGrid('exteriorFeaturesGrid', OPTIONS.exterior_features, 'exterior_features');
+    createCheckboxGrid('interiorMaterialsGrid', OPTIONS.interior_materials, 'interior_materials');
+    createCheckboxGrid('comfortFeaturesGrid', OPTIONS.comfort_features, 'comfort_features');
+    createCheckboxGrid('infotainmentFeaturesGrid', OPTIONS.infotainment_features, 'infotainment_features');
+    createCheckboxGrid('safetyFeaturesGrid', OPTIONS.safety_features, 'safety_features');
+    createCheckboxGrid('airbagsGrid', OPTIONS.airbags, 'airbags');
+    createCheckboxGrid('parkingFeaturesGrid', OPTIONS.parking_features, 'parking_features');
+    
+    // Bestehende Daten laden
+    if (existingData) loadFormData(existingData);
+    
+    // Event Listeners
+    document.getElementById('nextBtn').addEventListener('click', nextStep);
+    document.getElementById('prevBtn').addEventListener('click', prevStep);
+    document.getElementById('saveBtn').addEventListener('click', saveForm);
+    document.getElementById('generateNumber').addEventListener('click', generateInternalNumber);
+    document.getElementById('powerPs').addEventListener('input', calculateKw);
+    document.getElementById('netPrice').addEventListener('input', calculateGross);
+    
+    // Step-Klicks
+    document.querySelectorAll('.wizard-step').forEach(step => {
+        step.addEventListener('click', () => goToStep(parseInt(step.dataset.step)));
+    });
+});
+
+function nextStep() {
+    if (currentStep === 1 && !validateStep1()) return;
+    if (currentStep < totalSteps) {
+        goToStep(currentStep + 1);
+    }
+}
+
+function prevStep() {
+    if (currentStep > 1) goToStep(currentStep - 1);
+}
+
+function goToStep(step) {
+    // Aktuellen Step als completed markieren wenn vorwärts
+    if (step > currentStep) {
+        document.querySelector(`.wizard-step[data-step="${currentStep}"]`).classList.add('completed');
+    }
+    
+    // Panels wechseln
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.step-panel[data-step="${step}"]`).classList.add('active');
+    
+    // Progress aktualisieren
+    document.querySelectorAll('.wizard-step').forEach(s => {
+        s.classList.remove('active');
+        if (parseInt(s.dataset.step) < step) s.classList.add('completed');
+    });
+    document.querySelector(`.wizard-step[data-step="${step}"]`).classList.add('active');
+    
+    currentStep = step;
+    
+    // Buttons aktualisieren
+    document.getElementById('prevBtn').disabled = currentStep === 1;
+    const nextBtn = document.getElementById('nextBtn');
+    if (currentStep === totalSteps) {
+        nextBtn.innerHTML = '<i class="bi bi-printer me-2"></i>Drucken';
+        nextBtn.onclick = printIntake;
+    } else {
+        nextBtn.innerHTML = 'Weiter<i class="bi bi-arrow-right ms-2"></i>';
+        nextBtn.onclick = nextStep;
+    }
+    
+    // Zusammenfassung aktualisieren
+    if (currentStep === totalSteps) updateSummary();
+}
+
+function validateStep1() {
+    const brand = form.querySelector('[name="brand"]').value;
+    const model = form.querySelector('[name="model_variant"]').value;
+    if (!brand || !model) {
+        showToast('Bitte Marke und Modell ausfüllen', 'warning');
+        return false;
+    }
+    return true;
+}
+
+function calculateKw() {
+    const ps = parseFloat(document.getElementById('powerPs').value) || 0;
+    document.getElementById('powerKw').value = Math.round(ps * 0.7355);
+}
+
+function calculateGross() {
+    const net = parseFloat(document.getElementById('netPrice').value) || 0;
+    document.getElementById('grossPrice').value = (net * 1.19).toFixed(2);
+}
+
+async function generateInternalNumber() {
+    try {
+        const res = await fetch('/api/intake/generate-number');
+        const data = await res.json();
+        document.getElementById('internalNumber').value = data.internal_number;
+    } catch (e) {
+        showToast('Fehler beim Generieren', 'error');
+    }
+}
+
+function getFormData() {
+    const data = {};
+    const formData = new FormData(form);
+    
+    // Einfache Felder
+    for (const [key, value] of formData.entries()) {
+        if (!['fuel_types','exterior_features','interior_materials','comfort_features','infotainment_features','safety_features','airbags','parking_features'].includes(key)) {
+            data[key] = value;
+        }
+    }
+    
+    // Checkbox-Arrays
+    ['fuel_types','exterior_features','interior_materials','comfort_features','infotainment_features','safety_features','airbags','parking_features'].forEach(field => {
+        data[field] = Array.from(form.querySelectorAll(`[name="${field}"]:checked`)).map(cb => cb.value);
+    });
+    
+    // Boolean-Felder
+    ['particle_filter','color_metallic','color_matte','oil_change_new','brakes_new','timing_belt_new','replacement_engine','replacement_transmission','vat_deductible'].forEach(field => {
+        const el = form.querySelector(`[name="${field}"]`);
+        if (el) data[field] = el.checked;
+    });
+    
+    // Numerische Felder
+    ['mileage','num_owners','power_ps','power_kw','engine_capacity','cylinders','tank_size','fuel_consumption','co2_emission','gears','curb_weight','gross_weight','trailer_load_braked','trailer_load_unbraked','support_load','last_inspection_km','tire_tread_front','tire_tread_rear','replacement_engine_km','replacement_transmission_km','num_keys','net_price','gross_price','transfer_costs','optional_price'].forEach(field => {
+        if (data[field]) data[field] = parseFloat(data[field]) || null;
+    });
+    
+    return data;
+}
+
+function loadFormData(data) {
+    Object.keys(data).forEach(key => {
+        const el = form.querySelector(`[name="${key}"]`);
+        if (!el) return;
+        
+        if (Array.isArray(data[key])) {
+            data[key].forEach(val => {
+                const cb = form.querySelector(`[name="${key}"][value="${val}"]`);
+                if (cb) {
+                    cb.checked = true;
+                    cb.closest('.checkbox-item')?.classList.add('checked');
+                }
+            });
+        } else if (el.type === 'checkbox') {
+            el.checked = data[key];
+        } else {
+            el.value = data[key] || '';
+        }
+    });
+}
+
+async function saveForm() {
+    const data = getFormData();
+    if (!data.brand || !data.model_variant) {
+        showToast('Bitte Marke und Modell ausfüllen', 'warning');
+        return;
+    }
+    
+    showLoading();
+    try {
+        const id = form.querySelector('[name="id"]').value;
+        const url = id ? `/api/intake/${id}` : '/api/intake';
+        const method = id ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+            method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        hideLoading();
+        
+        if (result.success || result.id) {
+            showToast('Erfolgreich gespeichert!', 'success');
+            if (result.id) {
+                form.querySelector('[name="id"]').value = result.id;
+                history.replaceState(null, '', `/intake/${result.id}/edit`);
+            }
+        } else {
+            showToast(result.error || 'Fehler beim Speichern', 'error');
+        }
+    } catch (e) {
+        hideLoading();
+        showToast('Fehler beim Speichern', 'error');
+    }
+}
+
+function updateSummary() {
+    const data = getFormData();
+    
+    // Basisdaten
+    document.getElementById('summaryBasic').innerHTML = `
+        <div class="summary-item"><span class="label">Fahrzeug</span><span class="value">${data.brand || ''} ${data.model_variant || ''}</span></div>
+        <div class="summary-item"><span class="label">EZ</span><span class="value">${data.first_registration || '-'}</span></div>
+        <div class="summary-item"><span class="label">Kilometer</span><span class="value">${data.mileage ? data.mileage.toLocaleString('de-DE') + ' km' : '-'}</span></div>
+        <div class="summary-item"><span class="label">FIN</span><span class="value">${data.vin || '-'}</span></div>
+    `;
+    
+    // Motor
+    document.getElementById('summaryMotor').innerHTML = `
+        <div class="summary-item"><span class="label">Leistung</span><span class="value">${data.power_ps || '-'} PS / ${data.power_kw || '-'} kW</span></div>
+        <div class="summary-item"><span class="label">Kraftstoff</span><span class="value">${(data.fuel_types || []).join(', ') || '-'}</span></div>
+        <div class="summary-item"><span class="label">Getriebe</span><span class="value">${data.transmission || '-'}</span></div>
+    `;
+    
+    // Preis
+    document.getElementById('summaryPrice').innerHTML = `
+        <div class="summary-item"><span class="label">Brutto</span><span class="value" style="font-size:1.2rem;color:#198754">${data.gross_price ? parseFloat(data.gross_price).toLocaleString('de-DE') + ' €' : '-'}</span></div>
+        ${data.vat_deductible ? '<div class="summary-item"><span class="label"></span><span class="value text-muted">MwSt. ausweisbar</span></div>' : ''}
+    `;
+    
+    // Ausstattung
+    const allFeatures = [...(data.exterior_features||[]),...(data.comfort_features||[]),...(data.infotainment_features||[]),...(data.safety_features||[])];
+    document.getElementById('summaryFeatures').innerHTML = allFeatures.length 
+        ? `<div class="summary-tags">${allFeatures.map(f => `<span class="summary-tag">${f}</span>`).join('')}</div>`
+        : '<span class="text-muted">Keine Ausstattung ausgewählt</span>';
+}
+
+async function printIntake() {
+    await saveForm();
+    const id = form.querySelector('[name="id"]').value;
+    if (id) {
+        window.open(`/intake/${id}/view`, '_blank');
+    }
+}
+</script>
 {% endblock %}
