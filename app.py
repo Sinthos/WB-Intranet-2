@@ -2,6 +2,7 @@
 from flask import Flask, render_template, send_from_directory, jsonify, request
 import os
 import subprocess
+from datetime import datetime
 from models import db, Car
 from routes import car_routes, view_routes
 from version_utils import get_full_version_info, check_for_updates, get_changelog
@@ -45,6 +46,12 @@ def numberformat_filter(value):
 def inject_version():
     """Injiziert Versionsinformationen in alle Templates."""
     return {'version_info': get_full_version_info()}
+
+
+@app.context_processor
+def inject_now():
+    """Injiziert die now() Funktion in alle Templates."""
+    return {'now': datetime.now}
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
