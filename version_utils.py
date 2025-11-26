@@ -5,9 +5,33 @@ Utility-Modul für Versionsverwaltung und Update-Funktionen.
 import os
 import subprocess
 import requests
+import shutil
 from functools import lru_cache
 from datetime import datetime, timedelta
 import time
+
+
+def _get_git_executable() -> str:
+    """Findet den Pfad zur Git-Executable."""
+    # Versuche git im PATH zu finden
+    git_path = shutil.which('git')
+    if git_path:
+        return git_path
+    
+    # Fallback: Bekannte Pfade prüfen
+    common_paths = [
+        '/usr/bin/git',
+        '/usr/local/bin/git',
+        '/opt/homebrew/bin/git',
+        'C:\\Program Files\\Git\\bin\\git.exe',
+        'C:\\Program Files (x86)\\Git\\bin\\git.exe',
+    ]
+    
+    for path in common_paths:
+        if os.path.isfile(path):
+            return path
+    
+    return 'git'  # Fallback auf 'git' und hoffen, dass es im PATH ist
 
 # Pfad zur VERSION-Datei
 VERSION_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'VERSION')
@@ -73,7 +97,8 @@ def get_git_commit_hash(short: bool = True) -> str:
     
     # Fallback: Git-Befehl versuchen
     try:
-        cmd = ['git', 'rev-parse', '--short', 'HEAD'] if short else ['git', 'rev-parse', 'HEAD']
+        git_exe = _get_git_executable()
+        cmd = [git_exe, 'rev-parse', '--short', 'HEAD'] if short else [git_exe, 'rev-parse', 'HEAD']
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -101,8 +126,9 @@ def get_git_commit_date() -> str:
     
     # Fallback: Git-Befehl versuchen
     try:
+        git_exe = _get_git_executable()
         result = subprocess.run(
-            ['git', 'log', '-1', '--format=%ci'],
+            [git_exe, 'log', '-1', '--format=%ci'],
             capture_output=True,
             text=True,
             cwd=os.path.dirname(os.path.abspath(__file__)),
@@ -176,9 +202,11 @@ def _check_for_updates_via_git() -> dict:
     cwd = os.path.dirname(os.path.abspath(__file__))
     
     try:
+        git_exe = _get_git_executable()
+        
         # Fetch updates from remote (ohne zu mergen)
         fetch_result = subprocess.run(
-            ['git', 'fetch', 'origin'],
+            [git_exe, 'fetch', 'origin'],
             capture_output=True,
             text=True,
             cwd=cwd,
@@ -191,7 +219,7 @@ def _check_for_updates_via_git() -> dict:
         
         # Hole den neuesten Remote-Commit
         remote_result = subprocess.run(
-            ['git', 'rev-parse', 'origin/main'],
+            [git_exe, 'rev-parse', 'origin/main'],
             capture_output=True,
             text=True,
             cwd=cwd
@@ -200,7 +228,7 @@ def _check_for_updates_via_git() -> dict:
         if remote_result.returncode != 0:
             # Versuche origin/master
             remote_result = subprocess.run(
-                ['git', 'rev-parse', 'origin/master'],
+                [git_exe, 'rev-parse', 'origin/master'],
                 capture_output=True,
                 text=True,
                 cwd=cwd
@@ -213,7 +241,7 @@ def _check_for_updates_via_git() -> dict:
             
             # Hole Commit-Nachricht
             msg_result = subprocess.run(
-                ['git', 'log', '-1', '--format=%s', latest_commit],
+                [git_exe, 'log', '-1', '--format=%s', latest_commit],
                 capture_output=True,
                 text=True,
                 cwd=cwd
@@ -223,7 +251,7 @@ def _check_for_updates_via_git() -> dict:
             
             # Hole Commit-Datum
             date_result = subprocess.run(
-                ['git', 'log', '-1', '--format=%ci', latest_commit],
+                [git_exe, 'log', '-1', '--format=%ci', latest_commit],
                 capture_output=True,
                 text=True,
                 cwd=cwd
@@ -349,9 +377,11 @@ def _get_changelog_via_git(limit: int = 10) -> list:
     try:
         cwd = os.path.dirname(os.path.abspath(__file__))
         
+        git_exe = _get_git_executable()
+        
         # Hole die letzten Commits
         result = subprocess.run(
-            ['git', 'log', f'-{limit}', '--format=%H|%s|%ci|%an'],
+            [git_exe, 'log', f'-{limit}', '--format=%H|%s|%ci|%an'],
             capture_output=True,
             text=True,
             cwd=cwd,
