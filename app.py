@@ -2,6 +2,7 @@
 from flask import Flask, render_template, send_from_directory, jsonify, request
 import os
 import subprocess
+import shutil
 from datetime import datetime
 from models import db, Car
 from routes import car_routes, view_routes
@@ -112,6 +113,28 @@ def api_changelog():
     return jsonify(get_changelog(limit=limit))
 
 
+def _get_bash_executable() -> str:
+    """Findet den Pfad zur Bash-Executable."""
+    # Versuche bash im PATH zu finden
+    bash_path = shutil.which('bash')
+    if bash_path:
+        return bash_path
+    
+    # Fallback: Bekannte Pfade prüfen (macOS/Linux)
+    common_paths = [
+        '/bin/bash',
+        '/usr/bin/bash',
+        '/usr/local/bin/bash',
+        '/opt/homebrew/bin/bash',
+    ]
+    
+    for path in common_paths:
+        if os.path.isfile(path):
+            return path
+    
+    return 'bash'  # Fallback
+
+
 @app.route('/api/update', methods=['POST'])
 def api_update():
     """
@@ -153,9 +176,19 @@ def api_update():
                 'error': 'Update-Skript nicht gefunden'
             }), 404
         
+        # Finde bash executable
+        bash_exe = _get_bash_executable()
+        
+        # Prüfe ob bash gefunden wurde
+        if not os.path.isfile(bash_exe):
+            return jsonify({
+                'success': False,
+                'error': f'Bash nicht gefunden. Bitte manuell ausführen: bash update.sh'
+            }), 500
+        
         # Starte Update-Skript im Hintergrund
         subprocess.Popen(
-            ['bash', update_script],
+            [bash_exe, update_script],
             cwd=app.root_path,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -167,6 +200,11 @@ def api_update():
             'message': 'Update gestartet. Die Anwendung wird in Kürze neu gestartet.'
         })
         
+    except FileNotFoundError as e:
+        return jsonify({
+            'success': False,
+            'error': f'Bash nicht gefunden. Bitte manuell ausführen: bash update.sh'
+        }), 500
     except Exception as e:
         return jsonify({
             'success': False,

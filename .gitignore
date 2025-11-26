@@ -46,6 +46,7 @@ Thumbs.db
 instance/
 *.db
 !data/.gitkeep
+.build_info
 
 # Backups
 backups/
