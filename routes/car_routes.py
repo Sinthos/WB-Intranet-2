@@ -44,36 +44,39 @@ def delete_car_route(car_id):
 
 @bp.route('/api/cars/stats', methods=['GET'])
 def get_car_stats():
-    """Gibt Statistiken über alle Fahrzeuge zurück."""
+    """Gibt Statistiken über alle Fahrzeuge im Bestand zurück (verkaufte Fahrzeuge werden ausgeschlossen)."""
     try:
-        # Gesamtanzahl
-        total = Car.query.count()
+        # Basis-Query: nur Fahrzeuge im Bestand
+        in_stock_filter = Car.in_stock == True
         
-        # Durchschnittspreis
-        avg_price_result = db.session.query(func.avg(Car.price)).scalar()
+        # Gesamtanzahl (nur im Bestand)
+        total = Car.query.filter(in_stock_filter).count()
+        
+        # Durchschnittspreis (nur im Bestand)
+        avg_price_result = db.session.query(func.avg(Car.price)).filter(in_stock_filter).scalar()
         avg_price = float(avg_price_result) if avg_price_result else 0
         
-        # Durchschnittliche Kilometer
-        avg_mileage_result = db.session.query(func.avg(Car.mileage)).scalar()
+        # Durchschnittliche Kilometer (nur im Bestand)
+        avg_mileage_result = db.session.query(func.avg(Car.mileage)).filter(in_stock_filter).scalar()
         avg_mileage = float(avg_mileage_result) if avg_mileage_result else 0
         
-        # Fahrzeuge diese Woche hinzugefügt
+        # Fahrzeuge diese Woche hinzugefügt (nur im Bestand)
         week_ago = datetime.now() - timedelta(days=7)
-        recent_count = Car.query.filter(Car.created_at >= week_ago).count()
+        recent_count = Car.query.filter(in_stock_filter, Car.created_at >= week_ago).count()
         
-        # Fahrzeuge nach Marke (Top 5)
+        # Fahrzeuge nach Marke (Top 5, nur im Bestand)
         brands = db.session.query(
             Car.brand, 
             func.count(Car.id).label('count')
-        ).group_by(Car.brand).order_by(desc('count')).limit(5).all()
+        ).filter(in_stock_filter).group_by(Car.brand).order_by(desc('count')).limit(5).all()
         
         brands_data = [{'brand': b[0], 'count': b[1]} for b in brands]
         
-        # Fahrzeuge nach Kraftstoff
+        # Fahrzeuge nach Kraftstoff (nur im Bestand)
         fuel_types = db.session.query(
             Car.fuel_type,
             func.count(Car.id).label('count')
-        ).group_by(Car.fuel_type).all()
+        ).filter(in_stock_filter).group_by(Car.fuel_type).all()
         
         fuel_data = [{'fuel_type': f[0], 'count': f[1]} for f in fuel_types]
         
@@ -92,12 +95,13 @@ def get_car_stats():
 
 @bp.route('/api/cars/recent', methods=['GET'])
 def get_recent_cars():
-    """Gibt die zuletzt hinzugefügten Fahrzeuge zurück."""
+    """Gibt die zuletzt hinzugefügten Fahrzeuge im Bestand zurück."""
     try:
         limit = request.args.get('limit', 5, type=int)
         limit = min(limit, 20)  # Maximal 20 Fahrzeuge
         
-        cars = Car.query.order_by(desc(Car.created_at)).limit(limit).all()
+        # Nur Fahrzeuge im Bestand anzeigen
+        cars = Car.query.filter(Car.in_stock == True).order_by(desc(Car.created_at)).limit(limit).all()
         
         result = []
         for car in cars:
@@ -108,6 +112,7 @@ def get_recent_cars():
                 'model': car.model,
                 'price': car.price,
                 'mileage': car.mileage,
+                'in_stock': car.in_stock,
                 'created_at': car.created_at.strftime('%d.%m.%Y') if car.created_at else ''
             })
         
@@ -141,6 +146,7 @@ def export_cars():
                 'price': car.price,
                 'vat_deductible': car.vat_deductible,
                 'seller': car.seller,
+                'in_stock': car.in_stock,
                 'created_at': car.created_at.strftime('%d.%m.%Y %H:%M') if car.created_at else ''
             })
         

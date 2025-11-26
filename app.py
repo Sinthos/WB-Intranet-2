@@ -32,6 +32,27 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
+    
+    # Migration: Füge in_stock Spalte hinzu, falls sie nicht existiert
+    # und setze Standardwert für bestehende Einträge
+    try:
+        from sqlalchemy import text, inspect
+        inspector = inspect(db.engine)
+        columns = [col['name'] for col in inspector.get_columns('cars')]
+        
+        if 'in_stock' not in columns:
+            # Spalte existiert nicht - füge sie hinzu
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE cars ADD COLUMN in_stock BOOLEAN DEFAULT 1 NOT NULL'))
+                conn.commit()
+            print("Migration: in_stock Spalte hinzugefügt")
+        else:
+            # Spalte existiert - setze NULL-Werte auf 1 (im Bestand)
+            with db.engine.connect() as conn:
+                conn.execute(text('UPDATE cars SET in_stock = 1 WHERE in_stock IS NULL'))
+                conn.commit()
+    except Exception as e:
+        print(f"Migration-Hinweis: {e}")
 
 @app.template_filter('numberformat')
 def numberformat_filter(value):

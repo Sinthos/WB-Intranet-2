@@ -22,6 +22,7 @@ class Car(db.Model):
     vat_deductible = db.Column(db.Boolean, nullable=False)
     seller = db.Column(db.String, nullable=False, server_default='Auto Berndl', index=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), index=True)
+    in_stock = db.Column(db.Boolean, nullable=False, server_default='1', index=True)  # True = im Bestand, False = verkauft
 
     def to_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}

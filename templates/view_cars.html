@@ -172,6 +172,28 @@
         padding: 0.25rem 0.5rem;
     }
 
+    .badge-stock {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .badge-stock:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Sold row styling */
+    tr.sold-car {
+        opacity: 0.6;
+        background-color: rgba(108, 117, 125, 0.1) !important;
+    }
+
+    tr.sold-car:hover {
+        opacity: 0.8;
+    }
+
     /* Empty State */
     .empty-state {
         text-align: center;
@@ -370,6 +392,7 @@
                         </a>
                     </th>
                     <th>MwSt.</th>
+                    <th>Status</th>
                     <th>
                         <a href="{{ url_for('views.view_cars', search=search_term, sort='created_at', order='desc' if sort_by == 'created_at' and sort_order == 'asc' else 'asc') }}"
                            class="sort-header text-white text-decoration-none">
@@ -382,7 +405,7 @@
             </thead>
             <tbody>
                 {% for car in cars %}
-                <tr data-car-id="{{ car.id }}">
+                <tr data-car-id="{{ car.id }}" class="{% if not car.in_stock %}sold-car{% endif %}">
                     <td>{{ car.id }}</td>
                     <td><strong>{{ car.listing_number }}</strong></td>
                     <td>{{ car.brand }}</td>
@@ -401,6 +424,21 @@
                             <span class="badge bg-success badge-vat">Ja</span>
                         {% else %}
                             <span class="badge bg-secondary badge-vat">Nein</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if car.in_stock %}
+                            <span class="badge bg-success badge-stock toggle-stock" 
+                                  data-car-id="{{ car.id }}" data-in-stock="true"
+                                  title="Klicken um als verkauft zu markieren">
+                                <i class="bi bi-check-circle me-1"></i>Im Bestand
+                            </span>
+                        {% else %}
+                            <span class="badge bg-danger badge-stock toggle-stock" 
+                                  data-car-id="{{ car.id }}" data-in-stock="false"
+                                  title="Klicken um als im Bestand zu markieren">
+                                <i class="bi bi-cart-check me-1"></i>Verkauft
+                            </span>
                         {% endif %}
                     </td>
                     <td>{{ car.created_at.strftime('%d.%m.%Y') if car.created_at else '-' }}</td>
@@ -423,7 +461,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="16">
+                    <td colspan="17">
                         <div class="empty-state">
                             <i class="bi bi-car-front d-block"></i>
                             <h5>Keine Fahrzeuge gefunden</h5>
@@ -547,6 +585,13 @@
                                 <option value="false">Nein</option>
                             </select>
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="editInStock">
+                                <option value="true">Im Bestand</option>
+                                <option value="false">Verkauft</option>
+                            </select>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -620,6 +665,7 @@
                 document.getElementById('editEcoBadge').value = car.eco_badge || 'Grün (4)';
                 document.getElementById('editPrice').value = car.price || '';
                 document.getElementById('editVatDeductible').value = car.vat_deductible ? 'true' : 'false';
+                document.getElementById('editInStock').value = car.in_stock ? 'true' : 'false';
                 
                 hideLoading();
                 editModal.show();
@@ -647,7 +693,8 @@
             features: document.getElementById('editFeatures').value,
             eco_badge: document.getElementById('editEcoBadge').value,
             price: parseInt(document.getElementById('editPrice').value) || 0,
-            vat_deductible: document.getElementById('editVatDeductible').value === 'true'
+            vat_deductible: document.getElementById('editVatDeductible').value === 'true',
+            in_stock: document.getElementById('editInStock').value === 'true'
         };
         
         showLoading();
@@ -775,6 +822,55 @@
             showToast('Fehler beim Export: ' + error.message, 'error');
         }
     }
+
+    // Toggle Stock Status
+    document.querySelectorAll('.toggle-stock').forEach(badge => {
+        badge.addEventListener('click', async function() {
+            const carId = this.dataset.carId;
+            const currentStatus = this.dataset.inStock === 'true';
+            const newStatus = !currentStatus;
+            
+            showLoading();
+            
+            try {
+                const response = await fetch(`/car/${carId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ in_stock: newStatus })
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                hideLoading();
+                
+                // Update UI
+                const row = document.querySelector(`tr[data-car-id="${carId}"]`);
+                if (newStatus) {
+                    // Now in stock
+                    this.className = 'badge bg-success badge-stock toggle-stock';
+                    this.innerHTML = '<i class="bi bi-check-circle me-1"></i>Im Bestand';
+                    this.title = 'Klicken um als verkauft zu markieren';
+                    row.classList.remove('sold-car');
+                } else {
+                    // Now sold
+                    this.className = 'badge bg-danger badge-stock toggle-stock';
+                    this.innerHTML = '<i class="bi bi-cart-check me-1"></i>Verkauft';
+                    this.title = 'Klicken um als im Bestand zu markieren';
+                    row.classList.add('sold-car');
+                }
+                this.dataset.inStock = newStatus.toString();
+                
+                showToast(newStatus ? 'Fahrzeug als "Im Bestand" markiert' : 'Fahrzeug als "Verkauft" markiert', 'success');
+            } catch (error) {
+                hideLoading();
+                showToast('Fehler: ' + error.message, 'error');
+            }
+        });
+    });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
