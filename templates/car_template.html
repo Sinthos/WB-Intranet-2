@@ -380,7 +380,7 @@
           <div class="eco-label">Umweltplakette</div>
           <svg width="95" height="95" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="45" fill="{{ eco_badge_color }}" stroke="{{ eco_badge_stroke }}" stroke-width="2"/>
-            <text x="50" y="65" text-anchor="middle" fill="white" font-size="40" font-weight="bold">{{ car.eco_badge }}</text>
+            <text x="50" y="65" text-anchor="middle" fill="white" font-size="40" font-weight="bold">{{ car.eco_badge|string|first }}</text>
           </svg>
         </div>
         <div class="price-box">
@@ -388,7 +388,7 @@
           <div class="price">{{ car.price|numberformat }},- €</div>
           <div class="price-info">
             {% if car.vat_deductible %}
-            MwSt. ausweisbar<br>
+            MwSt. ausweisbar (Netto: {{ ((car.price / 1.19)|round|int)|numberformat }},- €)<br>
             {% endif %}
             Alle Angaben ohne Gewähr!
           </div>
