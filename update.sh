@@ -252,6 +252,101 @@ install_dependencies() {
     log_success "Abhängigkeiten installiert"
 }
 
+# Datenbank-Migration durchführen
+run_database_migration() {
+    log_info "Führe Datenbank-Migration durch..."
+    
+    cd "$SCRIPT_DIR"
+    
+    # Aktiviere virtuelle Umgebung
+    if [[ -d "${SCRIPT_DIR}/venv" ]]; then
+        source "${SCRIPT_DIR}/venv/bin/activate"
+    elif [[ -d "${SCRIPT_DIR}/.venv" ]]; then
+        source "${SCRIPT_DIR}/.venv/bin/activate"
+    fi
+    
+    # Führe Python-Skript für Migration aus
+    python3 << 'EOF'
+import os
+import sys
+
+# Füge das Skript-Verzeichnis zum Pfad hinzu
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    from flask import Flask
+    from models import db, Car
+    from sqlalchemy import text, inspect
+    
+    # Erstelle temporäre Flask-App für Datenbank-Zugriff
+    app = Flask(__name__)
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(data_dir, "car_data.db")}'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    db.init_app(app)
+    
+    with app.app_context():
+        # Erstelle alle Tabellen (falls nicht vorhanden)
+        db.create_all()
+        
+        # Prüfe und füge neue Spalten hinzu
+        inspector = inspect(db.engine)
+        
+        if 'cars' in inspector.get_table_names():
+            columns = [col['name'] for col in inspector.get_columns('cars')]
+            
+            # Migration: in_stock Spalte
+            if 'in_stock' not in columns:
+                with db.engine.connect() as conn:
+                    conn.execute(text('ALTER TABLE cars ADD COLUMN in_stock BOOLEAN DEFAULT 1 NOT NULL'))
+                    conn.commit()
+                print("Migration: in_stock Spalte hinzugefügt")
+            else:
+                # Setze NULL-Werte auf 1
+                with db.engine.connect() as conn:
+                    conn.execute(text('UPDATE cars SET in_stock = 1 WHERE in_stock IS NULL'))
+                    conn.commit()
+            
+            # Hier können weitere Migrationen hinzugefügt werden
+            # Beispiel:
+            # if 'neue_spalte' not in columns:
+            #     with db.engine.connect() as conn:
+            #         conn.execute(text('ALTER TABLE cars ADD COLUMN neue_spalte TEXT'))
+            #         conn.commit()
+            #     print("Migration: neue_spalte hinzugefügt")
+        
+        print("Datenbank-Migration erfolgreich abgeschlossen")
+        
+except Exception as e:
+    print(f"Migration-Fehler: {e}")
+    sys.exit(1)
+EOF
+
+    if [[ $? -eq 0 ]]; then
+        log_success "Datenbank-Migration abgeschlossen"
+    else
+        log_warning "Datenbank-Migration hatte Probleme - bitte manuell prüfen"
+    fi
+}
+
+# Speichere Build-Informationen
+save_build_info() {
+    log_info "Speichere Build-Informationen..."
+    
+    cd "$SCRIPT_DIR"
+    
+    local commit_short=$(git rev-parse --short HEAD 2>/dev/null || echo "lokal")
+    local commit_full=$(git rev-parse HEAD 2>/dev/null || echo "lokal")
+    local commit_date=$(git log -1 --format='%cd' --date=format:'%d.%m.%Y %H:%M' 2>/dev/null || date '+%d.%m.%Y %H:%M')
+    
+    # Speichere in .build_info Datei
+    echo -e "${commit_short}\n${commit_full}\n${commit_date}" > "${SCRIPT_DIR}/.build_info"
+    
+    log_success "Build-Informationen gespeichert"
+}
+
 # Starte Anwendung
 start_app() {
     log_info "Starte Anwendung..."
@@ -355,6 +450,8 @@ main() {
     stop_app
     pull_updates
     install_dependencies
+    run_database_migration
+    save_build_info
     start_app
     wait_for_app
     

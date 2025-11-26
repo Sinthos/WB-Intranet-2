@@ -178,7 +178,19 @@ def api_update():
 def settings():
     """Einstellungsseite mit Update-Funktion."""
     version_info = get_full_version_info()
-    update_info = check_for_updates()
+    # Update-Check wird NICHT automatisch durchgeführt - nur manuell über Button
+    # Dies verhindert GitHub API Rate-Limiting
+    update_info = {
+        "update_available": False,
+        "current_version": version_info.get("version", "0.0.0"),
+        "current_commit": version_info.get("commit_full", ""),
+        "latest_commit": None,
+        "latest_commit_date": None,
+        "latest_commit_message": None,
+        "error": None,
+        "checked": False  # Zeigt an, dass noch nicht geprüft wurde
+    }
+    # Changelog wird über lokales Git geladen (kein API-Aufruf)
     changelog = get_changelog(limit=10)
     return render_template('settings.html', 
                          version_info=version_info,
