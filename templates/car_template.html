@@ -380,7 +380,7 @@
           <div class="eco-label">Umweltplakette</div>
           <svg width="95" height="95" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="45" fill="{{ eco_badge_color }}" stroke="{{ eco_badge_stroke }}" stroke-width="2"/>
-            <text x="50" y="65" text-anchor="middle" fill="white" font-size="40" font-weight="bold">{{ car.eco_badge|string|first }}</text>
+            <text x="50" y="65" text-anchor="middle" fill="white" font-size="40" font-weight="bold">{{ (car.eco_badge|string)[-2] }}</text>
           </svg>
         </div>
         <div class="price-box">
